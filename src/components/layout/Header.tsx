@@ -21,7 +21,7 @@ export default function Header() {
   const siteLinks = [
     { label: "Sobre", href: "https://allos.org.br/sobre" },
     { label: "Clínica", href: "https://allos.org.br/clinica" },
-    { label: "Formação", href: "/formacao" },
+    { label: "Cursos", href: "/formacao" },
     { label: "Projetos", href: "https://allos.org.br/projetos" },
   ];
 
@@ -45,7 +45,7 @@ export default function Header() {
             <Image src="/Icone_Allos_Verde.png" alt="Allos" width={32} height={32} />
             <div>
               <span className="font-fraunces font-bold text-[17px] text-[#FDFBF7] tracking-wide">Allos</span>
-              <span className="block font-dm text-[9px] tracking-[.28em] text-[#C84B31] uppercase -mt-0.5">Formação</span>
+              <span className="block font-dm text-[9px] tracking-[.28em] text-[#C84B31] uppercase -mt-0.5">Cursos</span>
             </div>
           </Link>
 

@@ -1,7 +1,7 @@
 "use client";
 import { motion, useReducedMotion } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
-import { Award, ArrowRight } from "lucide-react";
+import { Award, ArrowRight, Trophy } from "lucide-react";
 
 function useIsMobile() {
   const [isMobile, setIsMobile] = useState(false);
@@ -104,8 +104,18 @@ function MovingGradient() {
   );
 }
 
+interface RankingEntry { nome: string; horas: number; count: number }
+
 export default function HeroFormacao() {
   const r = useReducedMotion();
+  const [ranking, setRanking] = useState<RankingEntry[]>([]);
+
+  useEffect(() => {
+    fetch("/api/ranking")
+      .then(r => r.json())
+      .then(d => { if (Array.isArray(d)) setRanking(d); })
+      .catch(() => {});
+  }, []);
   const up = (d: number) => ({
     initial: { opacity: 0, y: r ? 0 : 24 },
     animate: { opacity: 1, y: 0 },
@@ -143,7 +153,7 @@ export default function HeroFormacao() {
             >
               <div className="w-1.5 h-1.5 rounded-full bg-[#C84B31] animate-pulse" />
               <span className="font-dm text-xs font-semibold tracking-wider uppercase text-[#C84B31]">
-                Formação continuada
+                Cursos
               </span>
             </motion.div>
 
@@ -236,6 +246,53 @@ export default function HeroFormacao() {
                 }}
               />
             </div>
+
+            {/* Mini ranking */}
+            {ranking.length > 0 && (
+              <div
+                className="rounded-2xl p-4 sm:p-5 mt-4"
+                style={{
+                  background: "rgba(251,188,5,0.03)",
+                  border: "1px solid rgba(251,188,5,0.1)",
+                  backdropFilter: "blur(12px)",
+                }}
+              >
+                <div className="flex items-center gap-2 mb-3">
+                  <Trophy style={{ color: "#FBBC05", width: 14, height: 14 }} />
+                  <span className="font-dm text-[11px] font-semibold tracking-wider uppercase" style={{ color: "rgba(251,188,5,0.7)" }}>
+                    Top participantes da semana
+                  </span>
+                </div>
+                <div className="space-y-1.5">
+                  {ranking.map((entry, i) => {
+                    const medals = ["#FFD700", "#C0C0C0", "#CD7F32"];
+                    const isMedal = i < 3;
+                    return (
+                      <div key={entry.nome} className="flex items-center gap-2.5">
+                        <span
+                          className="font-fraunces font-bold text-xs w-5 text-center"
+                          style={{ color: isMedal ? medals[i] : "rgba(253,251,247,0.25)" }}
+                        >
+                          {i + 1}
+                        </span>
+                        <span
+                          className="font-dm text-xs flex-1 truncate"
+                          style={{ color: "rgba(253,251,247,0.6)" }}
+                        >
+                          {entry.nome}
+                        </span>
+                        <span
+                          className="font-dm text-[11px] font-bold"
+                          style={{ color: isMedal ? medals[i] : "rgba(253,251,247,0.3)" }}
+                        >
+                          {entry.horas}h
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
           </motion.div>
         </div>
       </div>

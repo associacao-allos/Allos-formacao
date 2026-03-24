@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useInView } from "react-intersection-observer";
-import { Radio, Clock, Video, ChevronRight, MessageCircle, X } from "lucide-react";
+import { Radio, Clock, Video, ChevronRight, MessageCircle, X, Trophy } from "lucide-react";
 
 const DIAS = ["Segunda", "Terça", "Quarta", "Quinta", "Sexta"] as const;
 
@@ -67,6 +67,12 @@ export default function SyncGroupsSection() {
   const [todayIndex, setTodayIndex] = useState(getTodayIndex);
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
+  // Ranking
+  type RankingPeriod = "week" | "month" | "quarter" | "semester" | "year";
+  const RANKING_LABELS: Record<RankingPeriod, string> = { week: "Semana", month: "Mês", quarter: "Trimestre", semester: "Semestre", year: "Ano" };
+  const [rankingPeriod, setRankingPeriod] = useState<RankingPeriod>("week");
+  const [rankingData, setRankingData] = useState<{ nome: string; horas: number; count: number }[]>([]);
+
   const { ref, inView } = useInView({ triggerOnce: true, threshold: 0.1 });
 
   // Tick every 60s to keep live status in sync
@@ -96,6 +102,14 @@ export default function SyncGroupsSection() {
     }
     fetchSchedule();
   }, []);
+
+  // Ranking fetch
+  useEffect(() => {
+    fetch(`/api/ranking?period=${rankingPeriod}`)
+      .then(r => r.json())
+      .then(d => { if (Array.isArray(d)) setRankingData(d); })
+      .catch(() => setRankingData([]));
+  }, [rankingPeriod]);
 
   const schedule = useMemo(() => {
     const items: ScheduleItem[] = [];
@@ -277,137 +291,65 @@ export default function SyncGroupsSection() {
           initial={{ opacity: 0, y: 20 }}
           animate={inView ? { opacity: 1, y: 0 } : {}}
           transition={{ delay: 0.3, duration: 0.6 }}
-          className="rounded-2xl overflow-hidden mb-8"
-          style={{
-            border: "1px solid rgba(253,251,247,0.06)",
-            background: "rgba(253,251,247,0.015)",
-          }}
+          className="rounded-2xl overflow-hidden"
+          style={{ border: "1px solid rgba(253,251,247,0.06)", background: "rgba(253,251,247,0.015)" }}
         >
-          <div className="p-5 flex items-center gap-2" style={{ borderBottom: "1px solid rgba(253,251,247,0.06)" }}>
-            <Clock size={16} style={{ color: "#2E9E8F" }} />
-            <h3 className="font-fraunces font-bold text-sm" style={{ color: "rgba(253,251,247,0.8)" }}>
-              Cronograma Semanal
-            </h3>
-          </div>
-
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5">
             {DIAS.map((dia, diaIdx) => {
               const items = scheduleByDay.get(dia) || [];
               const isCurrentDay = todayIndex === diaIdx;
-
               return (
-                <div
-                  key={dia}
-                  className="p-4"
+                <div key={dia} className="p-4"
                   style={{
                     borderRight: diaIdx < 4 ? "1px solid rgba(253,251,247,0.04)" : "none",
                     borderBottom: "1px solid rgba(253,251,247,0.04)",
-                    background: isCurrentDay ? "rgba(46,158,143,0.04)" : "transparent",
-                  }}
-                >
-                  <p
-                    className="font-dm text-xs font-bold uppercase tracking-wider mb-3"
-                    style={{ color: isCurrentDay ? "#2E9E8F" : "rgba(253,251,247,0.35)" }}
-                  >
+                    background: isCurrentDay ? "rgba(200,75,49,0.03)" : "transparent",
+                  }}>
+                  <p className="font-dm text-[10px] font-bold uppercase tracking-wider mb-3"
+                    style={{ color: isCurrentDay ? "#C84B31" : "rgba(253,251,247,0.3)" }}>
                     {dia}
                     {isCurrentDay && (
-                      <span
-                        className="ml-1.5 text-[9px] px-1.5 py-0.5 rounded-full normal-case tracking-normal font-medium"
-                        style={{ backgroundColor: "rgba(46,158,143,0.15)", color: "#2E9E8F" }}
-                      >
-                        hoje
-                      </span>
+                      <span className="ml-1.5 text-[9px] px-1.5 py-0.5 rounded-full normal-case tracking-normal font-medium"
+                        style={{ backgroundColor: "rgba(200,75,49,0.1)", color: "#C84B31" }}>hoje</span>
                     )}
                   </p>
-
                   {items.length > 0 ? (
                     <div className="space-y-2">
                       {items.map((item) => {
                         const live = isLive(item);
                         const isExpanded = expandedId === item.id;
-
                         return (
                           <div key={item.id}>
                             <button
                               onClick={() => item.descricao && setExpandedId(isExpanded ? null : item.id)}
                               className="w-full text-left rounded-lg p-2.5 transition-all"
                               style={{
-                                background: live
-                                  ? "rgba(34,197,94,0.08)"
-                                  : isExpanded
-                                  ? "rgba(253,251,247,0.04)"
-                                  : "rgba(253,251,247,0.02)",
-                                border: `1px solid ${live ? "rgba(34,197,94,0.15)" : isExpanded ? "rgba(253,251,247,0.1)" : "rgba(253,251,247,0.05)"}`,
+                                background: live ? "rgba(34,197,94,0.06)" : "rgba(253,251,247,0.02)",
+                                border: `1px solid ${live ? "rgba(34,197,94,0.12)" : "rgba(253,251,247,0.05)"}`,
                                 cursor: item.descricao ? "pointer" : "default",
-                              }}
-                            >
+                              }}>
                               <div className="flex items-center gap-1.5 mb-1">
-                                <span className="font-dm text-[11px] font-bold" style={{ color: "#C84B31" }}>
-                                  {item.hora}
-                                </span>
-                                {live && (
-                                  <Radio size={10} style={{ color: "#22c55e" }} className="animate-pulse" />
-                                )}
+                                <span className="font-dm text-[11px] font-bold" style={{ color: "#C84B31" }}>{item.hora}</span>
+                                {live && <Radio size={10} style={{ color: "#22c55e" }} className="animate-pulse" />}
                                 {item.descricao && (
-                                  <span
-                                    className="ml-auto transition-colors"
-                                    style={{ color: isExpanded ? "#2E9E8F" : "rgba(253,251,247,0.15)" }}
-                                  >
-                                    <InfoIcon size={12} />
-                                  </span>
+                                  <span className="ml-auto" style={{ color: isExpanded ? "rgba(253,251,247,0.4)" : "rgba(253,251,247,0.12)" }}><InfoIcon size={11} /></span>
                                 )}
                               </div>
-                              <p className="font-dm text-xs font-medium" style={{ color: "rgba(253,251,247,0.7)" }}>
-                                {item.atividade}
-                              </p>
+                              <p className="font-dm text-xs font-medium" style={{ color: "rgba(253,251,247,0.65)" }}>{item.atividade}</p>
                               {item.meetLink && live && (
-                                <a
-                                  href={item.meetLink}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  onClick={(e) => e.stopPropagation()}
-                                  className="font-dm text-[10px] font-bold mt-1.5 flex items-center gap-1 transition-all hover:gap-2"
-                                  style={{ color: "#22c55e" }}
-                                >
-                                  <Video size={10} /> Assistir agora
-                                  <ChevronRight size={10} />
+                                <a href={item.meetLink} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}
+                                  className="font-dm text-[10px] font-bold mt-1.5 flex items-center gap-1 transition-all hover:gap-2" style={{ color: "#22c55e" }}>
+                                  <Video size={10} /> Assistir agora <ChevronRight size={10} />
                                 </a>
                               )}
                             </button>
-
-                            {/* Description expandable */}
                             <AnimatePresence>
                               {isExpanded && item.descricao && (
-                                <motion.div
-                                  initial={{ height: 0, opacity: 0 }}
-                                  animate={{ height: "auto", opacity: 1 }}
-                                  exit={{ height: 0, opacity: 0 }}
-                                  transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
-                                  className="overflow-hidden"
-                                >
-                                  <div
-                                    className="px-2.5 pb-2.5 pt-1.5 rounded-b-lg -mt-0.5"
-                                    style={{
-                                      background: "rgba(253,251,247,0.03)",
-                                      borderLeft: "1px solid rgba(253,251,247,0.08)",
-                                      borderRight: "1px solid rgba(253,251,247,0.08)",
-                                      borderBottom: "1px solid rgba(253,251,247,0.08)",
-                                    }}
-                                  >
+                                <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.25 }} className="overflow-hidden">
+                                  <div className="px-2.5 pb-2.5 pt-1.5 rounded-b-lg -mt-0.5" style={{ background: "rgba(253,251,247,0.02)", border: "1px solid rgba(253,251,247,0.06)", borderTop: "none" }}>
                                     <div className="flex items-start gap-1.5">
-                                      <p
-                                        className="font-dm text-[11px] leading-relaxed flex-1"
-                                        style={{ color: "rgba(253,251,247,0.45)" }}
-                                      >
-                                        {item.descricao}
-                                      </p>
-                                      <button
-                                        onClick={() => setExpandedId(null)}
-                                        className="p-0.5 rounded flex-shrink-0 transition-colors hover:bg-white/[0.05]"
-                                        style={{ color: "rgba(253,251,247,0.2)" }}
-                                      >
-                                        <X size={10} />
-                                      </button>
+                                      <p className="font-dm text-[11px] leading-relaxed flex-1" style={{ color: "rgba(253,251,247,0.4)" }}>{item.descricao}</p>
+                                      <button onClick={() => setExpandedId(null)} className="p-0.5 rounded flex-shrink-0 hover:bg-white/[0.05]" style={{ color: "rgba(253,251,247,0.2)" }}><X size={10} /></button>
                                     </div>
                                   </div>
                                 </motion.div>
@@ -418,55 +360,78 @@ export default function SyncGroupsSection() {
                       })}
                     </div>
                   ) : (
-                    <p className="font-dm text-[11px]" style={{ color: "rgba(253,251,247,0.15)" }}>
-                      Sem grupo
-                    </p>
+                    <p className="font-dm text-[11px]" style={{ color: "rgba(253,251,247,0.12)" }}>Sem grupo</p>
                   )}
                 </div>
               );
             })}
           </div>
+
+          {/* Bottom bar: WhatsApp + Google inline */}
+          <div className="flex flex-col sm:flex-row items-center gap-3 px-5 py-4" style={{ borderTop: "1px solid rgba(253,251,247,0.06)" }}>
+            <a href="https://chat.whatsapp.com/JpZtYWJovU03VlrZJ5oUxQ" target="_blank" rel="noopener noreferrer"
+              className="font-dm text-xs font-semibold px-4 py-2.5 rounded-xl flex items-center gap-2 transition-all hover:-translate-y-0.5"
+              style={{ backgroundColor: "rgba(37,211,102,0.1)", color: "#25D366", border: "1px solid rgba(37,211,102,0.15)" }}>
+              <MessageCircle size={14} />
+              Grupo WhatsApp
+            </a>
+            <a href="https://search.google.com/local/writereview?placeid=ChIJRU1omzaXpgARA4UFQLEIq4g" target="_blank" rel="noopener noreferrer"
+              className="font-dm text-xs font-semibold px-4 py-2.5 rounded-xl flex items-center gap-2 transition-all hover:-translate-y-0.5"
+              style={{ backgroundColor: "rgba(253,251,247,0.03)", color: "rgba(253,251,247,0.5)", border: "1px solid rgba(253,251,247,0.06)" }}>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
+                <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4"/>
+                <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+                <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18A10.96 10.96 0 0 0 1 12c0 1.77.42 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/>
+                <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+              </svg>
+              Avaliar no Google
+            </a>
+          </div>
         </motion.div>
 
-        {/* WhatsApp group CTA */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={inView ? { opacity: 1, y: 0 } : {}}
-          transition={{ delay: 0.4, duration: 0.6 }}
-          className="rounded-2xl p-6 sm:p-8 flex flex-col sm:flex-row items-center gap-5 text-center sm:text-left"
-          style={{
-            background: "linear-gradient(135deg, rgba(37,211,102,0.06), rgba(46,158,143,0.06))",
-            border: "1px solid rgba(37,211,102,0.15)",
-          }}
-        >
-          <div
-            className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0"
-            style={{
-              background: "rgba(37,211,102,0.12)",
-              border: "1px solid rgba(37,211,102,0.25)",
-            }}
+        {/* Ranking — compact, same visual language */}
+        {rankingData.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={inView ? { opacity: 1, y: 0 } : {}}
+            transition={{ delay: 0.4, duration: 0.6 }}
+            className="mt-4 rounded-2xl overflow-hidden"
+            style={{ border: "1px solid rgba(253,251,247,0.06)", background: "rgba(253,251,247,0.015)" }}
           >
-            <MessageCircle size={22} style={{ color: "#25D366" }} />
-          </div>
-          <div className="flex-1 min-w-0">
-            <h4 className="font-fraunces font-bold text-sm mb-1" style={{ color: "rgba(253,251,247,0.85)" }}>
-              Entre no grupo da Formação Base
-            </h4>
-            <p className="font-dm text-xs leading-relaxed" style={{ color: "rgba(253,251,247,0.4)" }}>
-              Receba avisos sobre os grupos síncronos, materiais e novidades diretamente no WhatsApp.
-            </p>
-          </div>
-          <a
-            href="https://chat.whatsapp.com/JpZtYWJovU03VlrZJ5oUxQ"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="font-dm text-sm font-bold px-6 py-3 rounded-xl flex items-center gap-2 transition-all hover:-translate-y-0.5 flex-shrink-0"
-            style={{ backgroundColor: "#25D366", color: "#fff", boxShadow: "0 4px 20px rgba(37,211,102,0.3)" }}
-          >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="#fff"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
-            Entrar no grupo
-          </a>
-        </motion.div>
+            <div className="flex items-center gap-3 px-5 py-3" style={{ borderBottom: "1px solid rgba(253,251,247,0.04)" }}>
+              <div className="flex items-center gap-1.5">
+                <Trophy size={13} style={{ color: "#C84B31" }} />
+                <span className="font-dm text-[11px] font-semibold" style={{ color: "rgba(253,251,247,0.5)" }}>Top participantes</span>
+              </div>
+              <div className="flex gap-1 ml-auto">
+                {(Object.keys(RANKING_LABELS) as RankingPeriod[]).map(p => (
+                  <button key={p} onClick={() => setRankingPeriod(p)}
+                    className="font-dm text-[9px] px-2 py-0.5 rounded-full transition-all"
+                    style={{
+                      backgroundColor: rankingPeriod === p ? "rgba(200,75,49,0.1)" : "transparent",
+                      color: rankingPeriod === p ? "#C84B31" : "rgba(253,251,247,0.25)",
+                    }}>
+                    {RANKING_LABELS[p]}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-5">
+              {rankingData.map((entry, i) => {
+                const medals = ["#C84B31", "rgba(253,251,247,0.5)", "rgba(200,75,49,0.6)"];
+                const isMedal = i < 3;
+                return (
+                  <div key={entry.nome} className="flex items-center gap-2 px-5 py-2.5 sm:flex-col sm:text-center sm:py-4 sm:gap-1"
+                    style={{ borderRight: i < rankingData.length - 1 ? "1px solid rgba(253,251,247,0.04)" : "none" }}>
+                    <span className="font-fraunces font-bold text-lg sm:text-xl" style={{ color: isMedal ? medals[i] : "rgba(253,251,247,0.15)" }}>{i + 1}</span>
+                    <span className="font-dm text-[11px] flex-1 truncate sm:flex-none" style={{ color: "rgba(253,251,247,0.6)" }}>{entry.nome.split(" ")[0]}</span>
+                    <span className="font-dm text-[11px] font-bold" style={{ color: isMedal ? medals[i] : "rgba(253,251,247,0.2)" }}>{entry.horas}h</span>
+                  </div>
+                );
+              })}
+            </div>
+          </motion.div>
+        )}
       </div>
     </section>
   );

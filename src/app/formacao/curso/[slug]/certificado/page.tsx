@@ -417,6 +417,40 @@ export default function CertificadoPage() {
           Baixar PDF
         </Button>
       </div>
+
+      {/* Google review CTA */}
+      <div className="mt-10">
+        <a
+          href="https://search.google.com/local/writereview?placeid=ChIJRU1omzaXpgARA4UFQLEIq4g"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="block rounded-2xl p-5 sm:p-6 text-center transition-all hover:-translate-y-0.5 max-w-lg mx-auto"
+          style={{
+            background: "linear-gradient(135deg, rgba(251,188,5,0.06), rgba(234,67,53,0.04))",
+            border: "1px solid rgba(251,188,5,0.15)",
+          }}
+        >
+          <div className="flex items-center justify-center gap-3 mb-2">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+              <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4"/>
+              <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+              <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18A10.96 10.96 0 0 0 1 12c0 1.77.42 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/>
+              <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+            </svg>
+            <p className="font-fraunces font-bold text-lg text-[#FDFBF7]">Gostou da experiência?</p>
+          </div>
+          <p className="font-dm text-sm mb-4" style={{ color: "rgba(253,251,247,0.4)" }}>
+            Avalie a Allos no Google e ajude outras pessoas a nos encontrarem!
+          </p>
+          <span
+            className="font-dm text-sm font-bold inline-flex items-center gap-2 px-5 py-2.5 rounded-xl"
+            style={{ background: "linear-gradient(135deg, #FBBC05, #EA4335)", color: "#fff", boxShadow: "0 4px 20px rgba(251,188,5,0.25)" }}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+            Avaliar no Google
+          </span>
+        </a>
+      </div>
     </div>
   );
 }

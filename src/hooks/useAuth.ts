@@ -23,6 +23,7 @@ interface AuthContextValue {
   isAdmin: boolean;
   isInstructor: boolean;
   isStudent: boolean;
+  isAssociado: boolean;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -110,6 +111,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       isAdmin: profile?.role === "admin",
       isInstructor: profile?.role === "instructor",
       isStudent: profile?.role === "student",
+      isAssociado: profile?.role === "associado",
     }),
     [user, profile, loading, signOut]
   );

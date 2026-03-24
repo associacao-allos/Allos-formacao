@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { BookOpen, Sparkles, Play, Bell, Mail } from "lucide-react";
+import { BookOpen, Bell, Mail } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useInView } from "react-intersection-observer";
 import { createClient } from "@/lib/supabase/client";
@@ -18,20 +18,6 @@ import CourseBackground from "@/components/course/CourseBackground";
 import { toast } from "sonner";
 import type { Course } from "@/types";
 
-const howItWorks = [
-  {
-    icon: Sparkles,
-    title: "Escolha seu percurso",
-    desc: "Trilhas pensadas para diferentes momentos da prática clínica. Aprofunde o que faz sentido para o seu desenvolvimento agora.",
-    color: "#C84B31",
-  },
-  {
-    icon: Play,
-    title: "Aprenda na práxis",
-    desc: "Aulas gravadas, estudos de caso e leitura dirigida. O aprendizado nasce da prática, do erro e do feedback.",
-    color: "#2E9E8F",
-  },
-];
 
 export default function FormacaoPage() {
   const { profile } = useAuth();
@@ -48,7 +34,6 @@ export default function FormacaoPage() {
   const [notifySending, setNotifySending] = useState(false);
 
   const { ref: coursesRef, inView: coursesInView } = useInView({ triggerOnce: true, threshold: 0.08 });
-  const { ref: howRef, inView: howInView } = useInView({ triggerOnce: true, threshold: 0.15 });
 
   useEffect(() => {
     let cancelled = false;
@@ -404,75 +389,6 @@ export default function FormacaoPage() {
       {/* Synchronous groups - live schedule */}
       <SyncGroupsSection />
 
-      {/* How it works */}
-      <section
-        id="como-funciona"
-        ref={howRef}
-        className="relative py-16 sm:py-20 md:py-24 px-5 sm:px-6 md:px-10"
-        style={{ background: "rgba(21,21,21,0.6)" }}
-      >
-        <div className="max-w-[1200px] mx-auto">
-          <div className="text-center mb-14">
-            <motion.p
-              initial={{ opacity: 0, y: 10 }}
-              animate={howInView ? { opacity: 1, y: 0 } : {}}
-              transition={{ duration: 0.5 }}
-              className="font-dm font-semibold text-xs tracking-[.22em] text-[#2E9E8F] uppercase mb-3"
-            >
-              Como funciona
-            </motion.p>
-            <motion.h2
-              initial={{ opacity: 0, y: 16 }}
-              animate={howInView ? { opacity: 1, y: 0 } : {}}
-              transition={{ delay: 0.08, duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-              className="font-fraunces font-bold text-[#FDFBF7]"
-              style={{ fontSize: "clamp(24px,3vw,36px)" }}
-            >
-              Simples, direto e no <span className="italic text-[#2E9E8F]">seu ritmo</span>
-            </motion.h2>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-[800px] mx-auto">
-            {howItWorks.map((step, i) => (
-              <motion.div
-                key={step.title}
-                initial={{ opacity: 0, y: 24 }}
-                animate={howInView ? { opacity: 1, y: 0 } : {}}
-                transition={{ delay: 0.15 + i * 0.1, duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-                className="relative rounded-2xl p-5 sm:p-7 flex flex-col gap-3 sm:gap-4"
-                style={{
-                  background: "rgba(253,251,247,0.02)",
-                  border: "1px solid rgba(253,251,247,0.06)",
-                }}
-              >
-                <span
-                  className="absolute top-5 right-5 font-fraunces font-bold text-3xl"
-                  style={{ color: "rgba(253,251,247,0.04)" }}
-                >
-                  {String(i + 1).padStart(2, "0")}
-                </span>
-
-                <div
-                  className="w-11 h-11 rounded-xl flex items-center justify-center"
-                  style={{
-                    background: `${step.color}15`,
-                    border: `1px solid ${step.color}30`,
-                  }}
-                >
-                  <step.icon style={{ color: step.color, width: 18, height: 18 }} />
-                </div>
-
-                <h3 className="font-fraunces font-bold text-[#FDFBF7]" style={{ fontSize: "17px" }}>
-                  {step.title}
-                </h3>
-                <p className="font-dm text-sm leading-relaxed" style={{ color: "rgba(253,251,247,0.5)" }}>
-                  {step.desc}
-                </p>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </section>
       </div>
     </div>
   );

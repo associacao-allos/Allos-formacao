@@ -1,5 +1,5 @@
 interface BadgeProps {
-  variant: "free" | "paid" | "draft" | "published" | "archived" | "student" | "instructor" | "admin" | "sync";
+  variant: "free" | "paid" | "draft" | "published" | "archived" | "student" | "instructor" | "admin" | "associado" | "sync";
   children: React.ReactNode;
   className?: string;
 }
@@ -13,6 +13,7 @@ const variantStyles: Record<BadgeProps["variant"], string> = {
   student: "bg-blue-500/15 text-blue-400 border border-blue-500/20",
   instructor: "bg-purple-500/15 text-purple-400 border border-purple-500/20",
   admin: "bg-accent/15 text-accent border border-accent/20",
+  associado: "bg-amber-500/15 text-amber-400 border border-amber-500/20",
   sync: "bg-teal-500/15 text-teal-400 border border-teal-500/20",
 };
 

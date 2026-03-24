@@ -18,6 +18,7 @@ const ROLES_PER_PAGE = 20;
 const roleLabels: Record<string, string> = {
   admin: "Admin",
   instructor: "Professor",
+  associado: "Associado",
   student: "Aluno",
 };
 
@@ -145,7 +146,7 @@ export default function AdminConfiguracoesPage() {
           />
         </div>
         <div className="flex gap-2">
-          {["all", "student", "instructor", "admin"].map((r) => (
+          {["all", "student", "associado", "instructor", "admin"].map((r) => (
             <button
               key={r}
               onClick={() => { setRoleFilter(r); setVisibleCount(ROLES_PER_PAGE); }}
@@ -260,6 +261,7 @@ export default function AdminConfiguracoesPage() {
               onChange={(e) => setNewRole(e.target.value as UserRole)}
               options={[
                 { value: "student", label: "Aluno" },
+                { value: "associado", label: "Associado" },
                 { value: "instructor", label: "Professor" },
                 { value: "admin", label: "Administrador" },
               ]}
