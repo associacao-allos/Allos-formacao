@@ -1,19 +1,34 @@
 import { NextResponse } from 'next/server'
+import { createServiceRoleClient } from '@/lib/supabase/server'
 
-const ALLOS_SITE_URL = process.env.NEXT_PUBLIC_ALLOS_SITE_URL || 'https://allos.org.br'
+export const dynamic = 'force-dynamic'
 
 export async function GET() {
   try {
-    const res = await fetch(
-      `${ALLOS_SITE_URL}/api/certificados/formacao?type=cronograma_publico`,
-      { next: { revalidate: 60 } } // cache 1 min
-    )
-    if (!res.ok) {
+    const sb = await createServiceRoleClient()
+
+    // Check visibility
+    const { data: config } = await sb.from('formacao_cronograma').select('grupos_visiveis, duracao_minutos').limit(1).single()
+    if (config && config.grupos_visiveis === false) {
       return NextResponse.json({ visivel: false, horarios: [], slots: [], atividades: [] })
     }
-    const data = await res.json()
-    return NextResponse.json(data)
-  } catch {
+
+    // Fetch data in parallel
+    const [horariosRes, slotsRes, atividadesRes] = await Promise.all([
+      sb.from('formacao_horarios').select('*').eq('ativo', true).order('ordem'),
+      sb.from('formacao_slots').select('*, formacao_horarios(hora, ordem)').eq('ativo', true),
+      sb.from('certificado_atividades').select('id, nome, descricao').eq('ativo', true),
+    ])
+
+    return NextResponse.json({
+      visivel: true,
+      duracao_minutos: config?.duracao_minutos || 120,
+      horarios: horariosRes.data || [],
+      slots: slotsRes.data || [],
+      atividades: atividadesRes.data || [],
+    })
+  } catch (e) {
+    console.error('sync-groups error:', e)
     return NextResponse.json({ visivel: false, horarios: [], slots: [], atividades: [] })
   }
 }

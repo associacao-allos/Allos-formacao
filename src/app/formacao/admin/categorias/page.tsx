@@ -7,7 +7,7 @@ import { DEFAULT_CATEGORIES } from "@/lib/constants";
 import Button from "@/components/ui/Button";
 import Modal from "@/components/ui/Modal";
 import { motion } from "framer-motion";
-import { Plus, X, Tag, RotateCcw, AlertTriangle, BookOpen } from "lucide-react";
+import { Plus, X, Tag, RotateCcw, AlertTriangle, BookOpen, Pencil, Check } from "lucide-react";
 import { toast } from "sonner";
 
 interface CategoryRow {
@@ -19,8 +19,11 @@ export default function CategoriasPage() {
   const { isAdmin } = useAuth();
   const [categories, setCategories] = useState<CategoryRow[]>([]);
   const [usedCategories, setUsedCategories] = useState<Record<string, number>>({});
+  const [coursesByCategory, setCoursesByCategory] = useState<Record<string, { id: string; title: string }[]>>({});
   const [newName, setNewName] = useState("");
   const [deleteTarget, setDeleteTarget] = useState<CategoryRow | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editName, setEditName] = useState("");
   const [loading, setLoading] = useState(true);
   const [adding, setAdding] = useState(false);
 
@@ -30,16 +33,20 @@ export default function CategoriasPage() {
 
       const [catsRes, coursesRes] = await Promise.all([
         client.from("categories").select("id, name").order("name"),
-        client.from("courses").select("category").not("category", "is", null),
+        client.from("courses").select("id, title, category").not("category", "is", null),
       ]);
 
       const counts: Record<string, number> = {};
-      coursesRes.data?.forEach((c) => {
+      const byCategory: Record<string, { id: string; title: string }[]> = {};
+      coursesRes.data?.forEach((c: { id: string; title: string; category: string }) => {
         if (c.category) {
           counts[c.category] = (counts[c.category] || 0) + 1;
+          if (!byCategory[c.category]) byCategory[c.category] = [];
+          byCategory[c.category].push({ id: c.id, title: c.title });
         }
       });
       setUsedCategories(counts);
+      setCoursesByCategory(byCategory);
 
       if (catsRes.data) {
         setCategories(catsRes.data);
@@ -80,19 +87,43 @@ export default function CategoriasPage() {
   async function handleRemove() {
     if (!deleteTarget) return;
     const client = createClient();
-    const { error } = await client
-      .from("categories")
-      .delete()
-      .eq("id", deleteTarget.id);
 
+    // Remove category from all courses that use it
+    const courses = coursesByCategory[deleteTarget.name] || [];
+    if (courses.length > 0) {
+      await client.from("courses").update({ category: null }).eq("category", deleteTarget.name);
+    }
+
+    // Delete the category
+    const { error } = await client.from("categories").delete().eq("id", deleteTarget.id);
     if (error) {
       toast.error("Erro ao remover categoria.");
       return;
     }
 
     setCategories((prev) => prev.filter((c) => c.id !== deleteTarget.id));
+    setUsedCategories((prev) => { const next = { ...prev }; delete next[deleteTarget.name]; return next; });
+    setCoursesByCategory((prev) => { const next = { ...prev }; delete next[deleteTarget.name]; return next; });
     setDeleteTarget(null);
-    toast.success("Categoria removida.");
+    toast.success(`Categoria removida.${courses.length > 0 ? ` ${courses.length} curso(s) desassociado(s).` : ""}`);
+  }
+
+  async function handleEdit(cat: CategoryRow) {
+    const name = editName.trim();
+    if (!name || name === cat.name) { setEditingId(null); return; }
+    if (categories.some((c) => c.name === name && c.id !== cat.id)) {
+      toast.error("Essa categoria já existe.");
+      return;
+    }
+    const client = createClient();
+    // Update category name
+    const { error } = await client.from("categories").update({ name }).eq("id", cat.id);
+    if (error) { toast.error("Erro ao renomear."); return; }
+    // Also update courses that use the old name
+    await client.from("courses").update({ category: name }).eq("category", cat.name);
+    setCategories((prev) => prev.map((c) => c.id === cat.id ? { ...c, name } : c).sort((a, b) => a.name.localeCompare(b.name)));
+    setEditingId(null);
+    toast.success(`Categoria renomeada para "${name}"`);
   }
 
   async function handleReset() {
@@ -197,7 +228,7 @@ export default function CategoriasPage() {
                   border: "1px solid rgba(255,255,255,0.06)",
                 }}
               >
-                <div className="flex items-center gap-3 min-w-0">
+                <div className="flex items-center gap-3 min-w-0 flex-1">
                   <div
                     className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
                     style={{
@@ -207,28 +238,46 @@ export default function CategoriasPage() {
                   >
                     <Tag className="h-3.5 w-3.5" style={{ color: isDefault ? "#C84B31" : "#2E9E8F" }} />
                   </div>
-                  <div className="min-w-0">
-                    <p className="text-sm font-medium text-cream truncate">{cat.name}</p>
-                    <p className="text-[11px] text-cream/25">
-                      {count > 0 ? `${count} curso${count !== 1 ? "s" : ""}` : "Sem cursos"}
-                      {isDefault && " · Padrão"}
-                    </p>
+                  <div className="min-w-0 flex-1">
+                    {editingId === cat.id ? (
+                      <div className="flex items-center gap-1.5">
+                        <input type="text" value={editName}
+                          onChange={(e) => setEditName(e.target.value)}
+                          onKeyDown={(e) => { if (e.key === "Enter") handleEdit(cat); if (e.key === "Escape") setEditingId(null); }}
+                          autoFocus
+                          className="flex-1 px-2 py-1 rounded text-sm font-dm outline-none min-w-0"
+                          style={{ backgroundColor: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)", color: "#FDFBF7" }} />
+                        <button onClick={() => handleEdit(cat)} className="p-1 rounded hover:bg-white/[0.06]" style={{ color: "#22c55e" }}><Check className="h-3.5 w-3.5" /></button>
+                        <button onClick={() => setEditingId(null)} className="p-1 rounded hover:bg-white/[0.06]" style={{ color: "rgba(253,251,247,0.3)" }}><X className="h-3.5 w-3.5" /></button>
+                      </div>
+                    ) : (
+                      <>
+                        <p className="text-sm font-medium text-cream truncate">{cat.name}</p>
+                        <p className="text-[11px] text-cream/25">
+                          {count > 0 ? `${count} curso${count !== 1 ? "s" : ""}` : "Sem cursos"}
+                          {isDefault && " · Padrão"}
+                        </p>
+                      </>
+                    )}
                   </div>
                 </div>
 
-                <button
-                  onClick={() => {
-                    if (count > 0) {
-                      toast.error(`Não é possível remover: ${count} curso(s) usam esta categoria.`);
-                      return;
-                    }
-                    setDeleteTarget(cat);
-                  }}
-                  className="p-1.5 rounded-lg text-cream/15 hover:text-red-400 hover:bg-red-400/10 transition-all opacity-0 group-hover:opacity-100 flex-shrink-0"
-                  aria-label={`Remover ${cat.name}`}
-                >
-                  <X className="h-4 w-4" />
-                </button>
+                <div className="flex items-center gap-1 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-all">
+                  <button
+                    onClick={() => { setEditingId(cat.id); setEditName(cat.name); }}
+                    className="p-1.5 rounded-lg text-cream/15 hover:text-amber-400 hover:bg-amber-400/10 transition-all"
+                    aria-label={`Editar ${cat.name}`}
+                  >
+                    <Pencil className="h-3.5 w-3.5" />
+                  </button>
+                  <button
+                    onClick={() => setDeleteTarget(cat)}
+                    className="p-1.5 rounded-lg text-cream/15 hover:text-red-400 hover:bg-red-400/10 transition-all"
+                    aria-label={`Remover ${cat.name}`}
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
               </motion.div>
             );
           })}
@@ -251,7 +300,7 @@ export default function CategoriasPage() {
         {deleteTarget && (
           <div className="space-y-4">
             <p className="text-sm text-cream/50">
-              Tem certeza que deseja remover a categoria <span className="font-medium text-cream">"{deleteTarget.name}"</span>?
+              Tem certeza que deseja remover a categoria <span className="font-medium text-cream">&quot;{deleteTarget.name}&quot;</span>?
             </p>
             {DEFAULT_CATEGORIES.includes(deleteTarget.name) && (
               <div
@@ -264,9 +313,26 @@ export default function CategoriasPage() {
                 </p>
               </div>
             )}
+            {(coursesByCategory[deleteTarget.name] || []).length > 0 && (
+              <div className="rounded-[10px] p-3 space-y-2" style={{ background: "rgba(239,68,68,0.06)", border: "1px solid rgba(239,68,68,0.15)" }}>
+                <p className="text-xs text-red-300 font-medium">
+                  {coursesByCategory[deleteTarget.name].length} curso(s) usam esta categoria e serão desassociados:
+                </p>
+                <div className="space-y-1">
+                  {coursesByCategory[deleteTarget.name].map((c) => (
+                    <div key={c.id} className="flex items-center gap-2 px-2 py-1.5 rounded" style={{ background: "rgba(255,255,255,0.03)" }}>
+                      <BookOpen className="h-3 w-3 text-cream/30 flex-shrink-0" />
+                      <span className="text-xs text-cream/70 truncate">{c.title}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
             <div className="flex justify-end gap-3">
               <Button variant="ghost" onClick={() => setDeleteTarget(null)}>Cancelar</Button>
-              <Button variant="danger" onClick={handleRemove}>Remover</Button>
+              <Button variant="danger" onClick={handleRemove}>
+                Remover{(coursesByCategory[deleteTarget.name] || []).length > 0 ? " e desassociar" : ""}
+              </Button>
             </div>
           </div>
         )}

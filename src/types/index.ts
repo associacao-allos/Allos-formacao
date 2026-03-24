@@ -190,3 +190,83 @@ export interface CourseInstructor {
   // Relations
   instructor?: Profile;
 }
+
+// ─── Formação Base (migrado do Allos-site) ─────────────────
+
+export interface CertificadoCondutor {
+  id: string;
+  nome: string;
+  telefone: string | null;
+  observacoes: string | null;
+  ativo: boolean;
+  created_at: string;
+}
+
+export interface CertificadoAtividade {
+  id: string;
+  nome: string;
+  carga_horaria: number;
+  descricao: string | null;
+  ativo: boolean;
+  created_at: string;
+}
+
+export interface CertificadoSubmission {
+  id: string;
+  nome_completo: string;
+  nome_social: string | null;
+  email: string;
+  atividade_nome: string;
+  nota_grupo: number;
+  condutores: string[];
+  nota_condutor: number;
+  relato: string | null;
+  certificado_gerado: boolean;
+  certificado_resgatado: boolean | null;
+  created_at: string;
+}
+
+export interface FormacaoHorario {
+  id: string;
+  hora: string;
+  ordem: number;
+  ativo: boolean;
+}
+
+export interface FormacaoSlot {
+  id: string;
+  dia_semana: number;
+  horario_id: string;
+  ativo: boolean;
+  status: string;
+  atividade_nome: string | null;
+  meet_link: string | null;
+  created_at: string;
+  formacao_horarios?: { hora: string; ordem: number } | null;
+}
+
+export interface FormacaoAlocacao {
+  id: string;
+  slot_id: string;
+  condutor_id: string;
+  created_at: string;
+  certificado_condutores?: { id: string; nome: string; telefone: string | null } | null;
+}
+
+export interface FormacaoCronograma {
+  id: string;
+  imagem_base64: string | null;
+  grupos_visiveis: boolean;
+  duracao_minutos: number;
+  updated_at: string;
+}
+
+export interface CertificadoEvento {
+  id: string;
+  titulo: string;
+  descricao: string | null;
+  data_inicio: string;
+  data_fim: string;
+  ativo: boolean;
+  created_at: string;
+}

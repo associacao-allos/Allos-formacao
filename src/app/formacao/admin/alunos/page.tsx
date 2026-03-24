@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
+import dynamic from "next/dynamic";
 import { createClient } from "@/lib/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import Badge from "@/components/ui/Badge";
@@ -13,6 +14,8 @@ import { Search, User, Download, Filter, Trash2, AlertTriangle } from "lucide-re
 import { formatDate } from "@/lib/utils/format";
 import { toast } from "sonner";
 import type { Profile, Enrollment, Course } from "@/types";
+
+const EnviosPage = dynamic(() => import("@/app/formacao/admin/envios/page"), { ssr: false });
 
 interface StudentWithEnrollments extends Profile {
   enrollments: (Enrollment & { course: Pick<Course, "id" | "title"> })[];
@@ -44,6 +47,7 @@ const activityDotStyles: Record<string, { bg: string; label: string }> = {
 
 export default function AdminAlunosPage() {
   const { profile, isAdmin } = useAuth();
+  const [view, setView] = useState<"alunos" | "envios">("alunos");
   const [students, setStudents] = useState<StudentWithEnrollments[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -337,6 +341,35 @@ export default function AdminAlunosPage() {
         )}
       </motion.div>
 
+      {/* View toggle */}
+      <div className="flex items-center gap-2 mb-6">
+        <button
+          onClick={() => setView("alunos")}
+          className="font-dm text-xs px-4 py-2 rounded-full transition-all"
+          style={{
+            backgroundColor: view === "alunos" ? "rgba(200,75,49,0.12)" : "rgba(255,255,255,0.03)",
+            color: view === "alunos" ? "#C84B31" : "rgba(253,251,247,0.4)",
+            border: `1px solid ${view === "alunos" ? "rgba(200,75,49,0.3)" : "rgba(255,255,255,0.06)"}`,
+          }}
+        >
+          Alunos
+        </button>
+        <button
+          onClick={() => setView("envios")}
+          className="font-dm text-xs px-4 py-2 rounded-full transition-all"
+          style={{
+            backgroundColor: view === "envios" ? "rgba(200,75,49,0.12)" : "rgba(255,255,255,0.03)",
+            color: view === "envios" ? "#C84B31" : "rgba(253,251,247,0.4)",
+            border: `1px solid ${view === "envios" ? "rgba(200,75,49,0.3)" : "rgba(255,255,255,0.06)"}`,
+          }}
+        >
+          Envios
+        </button>
+      </div>
+
+      {view === "envios" && <EnviosPage />}
+
+      {view === "alunos" && (<>
       {/* Student count summary */}
       {students.length > 0 && (
         <motion.div
@@ -634,6 +667,7 @@ export default function AdminAlunosPage() {
           </div>
         )}
       </Modal>
+      </>)}
     </div>
   );
 }

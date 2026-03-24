@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
+import dynamic from "next/dynamic";
 import { createClient } from "@/lib/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import Skeleton from "@/components/ui/Skeleton";
@@ -8,6 +9,9 @@ import { motion } from "framer-motion";
 import { Search, ChevronDown, Award } from "lucide-react";
 import { formatDate } from "@/lib/utils/format";
 import type { Certificate } from "@/types";
+
+const CertFormacaoPage = dynamic(() => import("@/app/formacao/admin/certificados-formacao/page"), { ssr: false });
+const EnviosPage = dynamic(() => import("@/app/formacao/admin/envios/page"), { ssr: false });
 
 interface CourseOption {
   id: string;
@@ -19,6 +23,7 @@ export default function AdminCertificadosPage() {
   const [certificates, setCertificates] = useState<Certificate[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [view, setView] = useState<"cursos" | "formacao" | "envios">("cursos");
 
   const [courses, setCourses] = useState<CourseOption[]>([]);
   const [selectedCourseId, setSelectedCourseId] = useState<string>("all");
@@ -118,8 +123,48 @@ export default function AdminCertificadosPage() {
         <p className="text-sm text-cream/35 mt-1">
           Certificados emitidos na plataforma.
         </p>
+
+        <div className="flex items-center gap-2 mt-4">
+          <button
+            onClick={() => setView("cursos")}
+            className="font-dm text-xs px-4 py-2 rounded-full transition-all"
+            style={{
+              backgroundColor: view === "cursos" ? "rgba(200,75,49,0.12)" : "rgba(255,255,255,0.03)",
+              color: view === "cursos" ? "#C84B31" : "rgba(253,251,247,0.4)",
+              border: `1px solid ${view === "cursos" ? "rgba(200,75,49,0.3)" : "rgba(255,255,255,0.06)"}`,
+            }}
+          >
+            Cursos
+          </button>
+          <button
+            onClick={() => setView("formacao")}
+            className="font-dm text-xs px-4 py-2 rounded-full transition-all"
+            style={{
+              backgroundColor: view === "formacao" ? "rgba(200,75,49,0.12)" : "rgba(255,255,255,0.03)",
+              color: view === "formacao" ? "#C84B31" : "rgba(253,251,247,0.4)",
+              border: `1px solid ${view === "formacao" ? "rgba(200,75,49,0.3)" : "rgba(255,255,255,0.06)"}`,
+            }}
+          >
+            Formação
+          </button>
+          <button
+            onClick={() => setView("envios")}
+            className="font-dm text-xs px-4 py-2 rounded-full transition-all"
+            style={{
+              backgroundColor: view === "envios" ? "rgba(200,75,49,0.12)" : "rgba(255,255,255,0.03)",
+              color: view === "envios" ? "#C84B31" : "rgba(253,251,247,0.4)",
+              border: `1px solid ${view === "envios" ? "rgba(200,75,49,0.3)" : "rgba(255,255,255,0.06)"}`,
+            }}
+          >
+            Envios
+          </button>
+        </div>
       </motion.div>
 
+      {view === "formacao" && <CertFormacaoPage />}
+      {view === "envios" && <EnviosPage />}
+
+      {view === "cursos" && (<>
       {/* Stats bar */}
       <motion.div
         initial={{ opacity: 0, y: -5 }}
@@ -241,6 +286,7 @@ export default function AdminCertificadosPage() {
           </table>
         </div>
       </div>
+      </>)}
     </div>
   );
 }

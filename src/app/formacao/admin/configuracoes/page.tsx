@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import dynamic from "next/dynamic";
 import { createClient } from "@/lib/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import Button from "@/components/ui/Button";
@@ -13,6 +14,8 @@ import { motion } from "framer-motion";
 import { Search, Shield, AlertTriangle } from "lucide-react";
 import type { Profile, UserRole } from "@/types";
 
+const CategoriasPage = dynamic(() => import("@/app/formacao/admin/categorias/page"), { ssr: false });
+
 const ROLES_PER_PAGE = 20;
 
 const roleLabels: Record<string, string> = {
@@ -24,6 +27,7 @@ const roleLabels: Record<string, string> = {
 
 export default function AdminConfiguracoesPage() {
   const { profile, isAdmin } = useAuth();
+  const [configTab, setConfigTab] = useState<"usuarios" | "categorias">("usuarios");
   const [users, setUsers] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -128,10 +132,26 @@ export default function AdminConfiguracoesPage() {
           Configurações
         </h1>
         <p className="text-cream/40 text-sm mt-1">
-          Gerencie usuários e permissões — {users.length} usuários cadastrados.
+          Gerencie usuários, permissões e categorias.
         </p>
+        <div className="flex gap-2 mt-4">
+          {(["usuarios", "categorias"] as const).map(t => (
+            <button key={t} onClick={() => setConfigTab(t)}
+              className="font-dm text-xs px-4 py-2 rounded-full transition-all"
+              style={{
+                backgroundColor: configTab === t ? "rgba(200,75,49,0.12)" : "rgba(255,255,255,0.03)",
+                color: configTab === t ? "#C84B31" : "rgba(253,251,247,0.4)",
+                border: `1px solid ${configTab === t ? "rgba(200,75,49,0.3)" : "rgba(255,255,255,0.06)"}`,
+              }}>
+              {t === "usuarios" ? "Usuários" : "Categorias"}
+            </button>
+          ))}
+        </div>
       </motion.div>
 
+      {configTab === "categorias" && <CategoriasPage />}
+
+      {configTab === "usuarios" && (<>
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-3 mb-6">
         <div className="relative flex-1 max-w-lg">
@@ -294,6 +314,7 @@ export default function AdminConfiguracoesPage() {
           </div>
         )}
       </Modal>
+      </>)}
     </div>
   );
 }

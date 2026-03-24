@@ -87,7 +87,7 @@ export default function SyncGroupsSection() {
   useEffect(() => {
     async function fetchSchedule() {
       try {
-        const res = await fetch("/api/sync-groups");
+        const res = await fetch("/api/certificados/formacao?type=cronograma_publico");
         if (!res.ok) throw new Error("Failed to fetch");
         const data = await res.json();
         if (data.visivel === false) { setVisivel(false); return; }
@@ -424,7 +424,7 @@ export default function SyncGroupsSection() {
                   <div key={entry.nome} className="flex items-center gap-2 px-5 py-2.5 sm:flex-col sm:text-center sm:py-4 sm:gap-1"
                     style={{ borderRight: i < rankingData.length - 1 ? "1px solid rgba(253,251,247,0.04)" : "none" }}>
                     <span className="font-fraunces font-bold text-lg sm:text-xl" style={{ color: isMedal ? medals[i] : "rgba(253,251,247,0.15)" }}>{i + 1}</span>
-                    <span className="font-dm text-[11px] flex-1 truncate sm:flex-none" style={{ color: "rgba(253,251,247,0.6)" }}>{entry.nome.split(" ")[0]}</span>
+                    <span className="font-dm text-[11px] flex-1 truncate sm:flex-none" style={{ color: "rgba(253,251,247,0.6)" }}>{entry.nome.split(" ").slice(0, 2).join(" ")}</span>
                     <span className="font-dm text-[11px] font-bold" style={{ color: isMedal ? medals[i] : "rgba(253,251,247,0.2)" }}>{entry.horas}h</span>
                   </div>
                 );

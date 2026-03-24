@@ -61,6 +61,74 @@ function isVimeoUrl(url: string): boolean {
   return /vimeo\.com/.test(url);
 }
 
+// Category picker with create-new inline
+function CategoryPicker({ categories, value, onChange }: { categories: string[]; value: string; onChange: (v: string) => void }) {
+  const [open, setOpen] = useState(false);
+  const [newCat, setNewCat] = useState("");
+  const [creating, setCreating] = useState(false);
+
+  async function handleCreate() {
+    const name = newCat.trim();
+    if (!name) return;
+    setCreating(true);
+    const { error } = await createClient().from("categories").insert({ name });
+    setCreating(false);
+    if (error) { toast.error("Erro ao criar categoria"); return; }
+    onChange(name);
+    setNewCat("");
+    setOpen(false);
+    toast.success(`Categoria "${name}" criada`);
+  }
+
+  return (
+    <div className="flex flex-col gap-1.5">
+      <label className="text-sm font-medium text-cream/70">Categoria</label>
+      <div className="relative">
+        <button type="button" onClick={() => setOpen(!open)}
+          className="w-full px-4 py-2.5 rounded-[10px] dark-input text-sm font-dm text-left flex items-center justify-between">
+          <span style={{ color: value ? "#FDFBF7" : "rgba(253,251,247,0.3)" }}>{value || "Selecione uma categoria"}</span>
+          <svg className="h-4 w-4 text-cream/30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="m6 9 6 6 6-6"/></svg>
+        </button>
+        {open && (
+          <>
+            <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
+            <div className="absolute top-full left-0 right-0 mt-1 z-20 rounded-lg py-1 max-h-60 overflow-auto"
+              style={{ backgroundColor: "#1E1E1E", border: "1px solid rgba(255,255,255,0.1)", boxShadow: "0 8px 30px rgba(0,0,0,0.5)" }}>
+              {value && (
+                <button type="button" onClick={() => { onChange(""); setOpen(false); }}
+                  className="w-full text-left px-3 py-2 text-xs font-dm hover:bg-white/[0.04]" style={{ color: "rgba(253,251,247,0.3)" }}>
+                  Limpar seleção
+                </button>
+              )}
+              {categories.map(c => (
+                <button type="button" key={c} onClick={() => { onChange(c); setOpen(false); }}
+                  className="w-full text-left px-3 py-2 text-sm font-dm hover:bg-white/[0.04]"
+                  style={{ color: c === value ? "#C84B31" : "rgba(253,251,247,0.7)" }}>
+                  {c}
+                </button>
+              ))}
+              <div className="border-t border-white/[0.06] mt-1 pt-1 px-2 pb-1">
+                <div className="flex gap-1.5">
+                  <input type="text" value={newCat} onChange={e => setNewCat(e.target.value)}
+                    onKeyDown={e => e.key === "Enter" && (e.preventDefault(), handleCreate())}
+                    placeholder="Nova categoria..."
+                    className="flex-1 px-2.5 py-1.5 rounded text-xs font-dm outline-none"
+                    style={{ backgroundColor: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)", color: "#FDFBF7" }} />
+                  <button type="button" onClick={handleCreate} disabled={creating || !newCat.trim()}
+                    className="px-2.5 py-1.5 rounded text-xs font-dm font-bold disabled:opacity-30"
+                    style={{ backgroundColor: "#C84B31", color: "#fff" }}>
+                    {creating ? "..." : "+"}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function CourseForm({ courseId }: CourseFormProps) {
   const router = useRouter();
   const { profile, isAdmin } = useAuth();
@@ -726,12 +794,10 @@ export default function CourseForm({ courseId }: CourseFormProps) {
             placeholder="Descrição completa. Suporta Markdown."
             rows={8}
           />
-          <Select
-            label="Categoria"
+          <CategoryPicker
+            categories={availableCategories}
             value={category}
-            onChange={(e) => { setCategory(e.target.value); markDirty(); }}
-            options={availableCategories.map((c) => ({ value: c, label: c }))}
-            placeholder="Selecione uma categoria"
+            onChange={(v) => { setCategory(v); markDirty(); }}
           />
           <Input
             label="URL da thumbnail (capa do curso)"

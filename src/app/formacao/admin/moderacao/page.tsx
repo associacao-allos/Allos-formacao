@@ -1,5 +1,6 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { useEffect, useState, useMemo } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -11,6 +12,8 @@ import { motion } from "framer-motion";
 import { Trash2, Star, MessageSquare, User, AlertTriangle, ChevronDown, Reply, Send, Search } from "lucide-react";
 import { formatRelativeDate } from "@/lib/utils/format";
 import { toast } from "sonner";
+
+const DuvidasPage = dynamic(() => import("@/app/formacao/admin/duvidas/page"), { ssr: false });
 
 interface ReviewItem {
   id: string;
@@ -36,7 +39,7 @@ interface CourseOption {
   title: string;
 }
 
-type Tab = "reviews" | "comments";
+type Tab = "reviews" | "comments" | "duvidas";
 type RatingFilter = "all" | "negative" | "neutral" | "positive";
 
 export default function ModeracaoPage() {
@@ -352,6 +355,15 @@ export default function ModeracaoPage() {
           <MessageSquare className="h-4 w-4" />
           Comentários ({filteredComments.length})
         </button>
+        <button
+          onClick={() => setTab("duvidas")}
+          className={`flex-1 flex items-center justify-center gap-2 py-2.5 text-sm font-medium rounded-[10px] transition-all duration-200 ${
+            tab === "duvidas" ? "text-white font-semibold" : "text-cream/40 hover:text-cream/70"
+          }`}
+          style={tab === "duvidas" ? { background: "linear-gradient(135deg, #C84B31, #A33D27)" } : {}}
+        >
+          Dúvidas
+        </button>
       </div>
 
       {/* Reviews */}
@@ -496,6 +508,11 @@ export default function ModeracaoPage() {
           )}
         </div>
       )}
+
+      {/* Dúvidas */}
+      {tab === "duvidas" && <DuvidasPage />}
+
+      {/* Categorias */}
 
       {/* Delete confirmation */}
       <Modal

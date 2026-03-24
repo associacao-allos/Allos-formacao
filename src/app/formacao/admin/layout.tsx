@@ -23,27 +23,24 @@ import {
   X,
   User,
   Video,
+  FileText,
+  GraduationCap,
+  Calendar,
 } from "lucide-react";
 
 const navItems = [
   { href: "/formacao/admin", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/formacao/admin/cursos", label: "Cursos", icon: BookOpen },
-  { href: "/formacao/admin/alunos", label: "Alunos", icon: Users },
+  { href: "/formacao/admin/formacao-base", label: "Formação", icon: Calendar },
   { href: "/formacao/admin/certificados", label: "Certificados", icon: Award },
-  { href: "/formacao/admin/duvidas", label: "Dúvidas em vídeo", icon: Video },
   { href: "/formacao/admin/moderacao", label: "Moderação", icon: MessageSquare },
-  { href: "/formacao/admin/categorias", label: "Categorias", icon: Tag },
   { href: "/formacao/admin/configuracoes", label: "Configurações", icon: Settings },
 ];
 
 const pageTitles: Record<string, string> = {
   "/formacao/admin": "Dashboard",
-  "/formacao/admin/cursos": "Cursos",
-  "/formacao/admin/alunos": "Alunos",
+  "/formacao/admin/formacao-base": "Formação",
   "/formacao/admin/certificados": "Certificados",
-  "/formacao/admin/duvidas": "Dúvidas em vídeo",
   "/formacao/admin/moderacao": "Moderação",
-  "/formacao/admin/categorias": "Categorias",
   "/formacao/admin/configuracoes": "Configurações",
 };
 
@@ -87,6 +84,23 @@ export default function AdminLayout({
       </div>
     );
   }
+
+  // Hide parent layout header/footer when admin panel is active
+  useEffect(() => {
+    const nav = document.querySelector("nav.fixed");
+    const footer = document.querySelector("footer");
+    const floating = document.querySelector("[data-floating-question]");
+    if (nav) (nav as HTMLElement).style.display = "none";
+    if (footer) (footer as HTMLElement).style.display = "none";
+    if (floating) (floating as HTMLElement).style.display = "none";
+    document.body.style.paddingTop = "0";
+    return () => {
+      if (nav) (nav as HTMLElement).style.display = "";
+      if (footer) (footer as HTMLElement).style.display = "";
+      if (floating) (floating as HTMLElement).style.display = "";
+      document.body.style.paddingTop = "";
+    };
+  }, []);
 
   if (!profile || (!isAdmin && !isInstructor)) return null;
 
