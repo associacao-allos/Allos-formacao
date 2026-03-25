@@ -1,5 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  assetPrefix: 'https://allos-formacao-production.up.railway.app',
   images: {
     remotePatterns: [
       {
