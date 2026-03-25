@@ -80,14 +80,13 @@ export default function RegisterForm({ redirectTo }: RegisterFormProps) {
 
     setLoading(true);
 
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
         data: {
           full_name: fullName,
         },
-        emailRedirectTo: `${window.location.origin}/formacao/auth/callback`,
       },
     });
 
@@ -97,10 +96,29 @@ export default function RegisterForm({ redirectTo }: RegisterFormProps) {
       return;
     }
 
-    toast.success(
-      "Conta criada! Verifique seu email para confirmar o cadastro.",
-      { duration: 6000 }
-    );
+    // If email confirmation is disabled, user is auto-confirmed
+    // and we can sign them in immediately
+    if (data.session) {
+      toast.success("Conta criada com sucesso!");
+      window.location.href = redirectTo || "/formacao";
+      return;
+    }
+
+    // If email confirmation is enabled, try to sign in directly
+    // (works if Supabase has "Confirm email" disabled)
+    const { error: signInError } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    if (!signInError) {
+      toast.success("Conta criada com sucesso!");
+      window.location.href = redirectTo || "/formacao";
+      return;
+    }
+
+    // Fallback: email confirmation is required
+    toast.success("Conta criada! Verifique seu email para confirmar.", { duration: 6000 });
     setLoading(false);
   }
 
