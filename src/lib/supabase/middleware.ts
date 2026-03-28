@@ -1,6 +1,18 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
+const BASE_URL = process.env.APP_URL || process.env.NEXT_PUBLIC_APP_URL || "https://allos.org.br";
+
+function hardRedirect(path: string, cookieSource?: NextResponse) {
+  const headers = new Headers({ Location: `${BASE_URL}${path}` });
+  if (cookieSource) {
+    for (const cookie of cookieSource.cookies.getAll()) {
+      headers.append("Set-Cookie", `${cookie.name}=${cookie.value}; Path=/; HttpOnly; Secure; SameSite=Lax`);
+    }
+  }
+  return new Response(null, { status: 307, headers });
+}
+
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });
 
@@ -30,7 +42,6 @@ export async function updateSession(request: NextRequest) {
   } = await supabase.auth.getUser();
 
   const pathname = request.nextUrl.pathname;
-  const baseUrl = process.env.APP_URL || process.env.NEXT_PUBLIC_APP_URL || "https://allos.org.br";
 
   // Protected routes that require authentication
   const protectedPaths = ["/formacao/admin", "/formacao/curso"];
@@ -38,13 +49,7 @@ export async function updateSession(request: NextRequest) {
 
   // If accessing a protected route without auth, redirect to login
   if (isProtected && !user) {
-    const redirectUrl = new URL(`/formacao/auth?redirect=${encodeURIComponent(pathname)}`, baseUrl);
-    const redirectResponse = NextResponse.redirect(redirectUrl);
-    // Preserve any session cookies that were refreshed during this request
-    supabaseResponse.cookies.getAll().forEach((cookie) => {
-      redirectResponse.cookies.set(cookie.name, cookie.value);
-    });
-    return redirectResponse;
+    return hardRedirect(`/formacao/auth?redirect=${encodeURIComponent(pathname)}`, supabaseResponse);
   }
 
   // Admin routes — check role (admin or instructor required)
@@ -57,13 +62,7 @@ export async function updateSession(request: NextRequest) {
 
     const allowedRoles = ["admin", "instructor"];
     if (!profile?.role || !allowedRoles.includes(profile.role)) {
-      const redirectUrl = new URL("/formacao", baseUrl);
-      const redirectResponse = NextResponse.redirect(redirectUrl);
-      // Preserve any session cookies that were refreshed during this request
-      supabaseResponse.cookies.getAll().forEach((cookie) => {
-        redirectResponse.cookies.set(cookie.name, cookie.value);
-      });
-      return redirectResponse;
+      return hardRedirect("/formacao", supabaseResponse);
     }
   }
 
