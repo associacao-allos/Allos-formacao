@@ -6,7 +6,8 @@ const BASE_URL = process.env.APP_URL || process.env.NEXT_PUBLIC_APP_URL || "http
 
 function hardRedirect(path: string, setCookies?: { name: string; value: string; options?: Record<string, unknown> }[]) {
   const url = `${BASE_URL}${path}`;
-  const headers = new Headers({ Location: url });
+  console.log("[CALLBACK] hardRedirect to:", url, "BASE_URL:", BASE_URL);
+  const headers = new Headers({ Location: url, "X-Debug-Location": url });
   if (setCookies) {
     for (const c of setCookies) {
       const parts = [`${c.name}=${c.value}`, "Path=/"];
