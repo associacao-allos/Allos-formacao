@@ -1,6 +1,16 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   assetPrefix: 'https://allos-formacao-production.up.railway.app',
+  async headers() {
+    return [
+      {
+        source: '/_next/static/:path*',
+        headers: [
+          { key: 'Access-Control-Allow-Origin', value: '*' },
+        ],
+      },
+    ];
+  },
   images: {
     path: 'https://allos-formacao-production.up.railway.app/_next/image',
     remotePatterns: [
