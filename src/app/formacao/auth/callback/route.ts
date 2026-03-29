@@ -7,7 +7,7 @@ const BASE_URL = process.env.APP_URL || process.env.NEXT_PUBLIC_APP_URL || "http
 const COOKIE_PREFIX = "sb-syiaushvzhgyhvsmoegt-auth-token";
 
 function buildSetCookie(name: string, value: string, options: Record<string, unknown> = {}): string {
-  const parts = [`${name}=${encodeURIComponent(value)}`];
+  const parts = [`${name}=${value}`];
   parts.push(`Path=${(options.path as string) || "/"}`);
   if (options.maxAge) parts.push(`Max-Age=${options.maxAge}`);
   if (options.domain) parts.push(`Domain=${options.domain}`);

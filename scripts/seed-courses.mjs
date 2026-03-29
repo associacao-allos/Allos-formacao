@@ -1,7 +1,7 @@
 // Script to seed courses from YouTube playlists into Supabase
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || "https://cjmfjwgkrcskwijgujlv.supabase.co";
 const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
-const INSTRUCTOR_ID = "c293d8dc-85f0-43b7-ae7b-573f56cc41a3";
+const INSTRUCTOR_ID = process.env.INSTRUCTOR_ID || "50edd22c-a797-4ca0-af37-7377299c6db0";
 
 const headers = {
   apikey: SUPABASE_KEY,

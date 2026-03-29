@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html>
+<body>
+<h2>Teste Supabase</h2>
+<pre id="result">Testando...</pre>
+<script>
+var url = "https://syiaushvzhgyhvsmoegt.supabase.co/rest/v1/courses?select=id,title&status=eq.published&limit=2";
+var key = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN5aWF1c2h2emhneWh2c21vZWd0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ0ODU3ODMsImV4cCI6MjA5MDA2MTc4M30.8aLqek5JRvILounYZJr-lKqL7UVzbCV4KSeF73nYo-M";
+fetch(url, {headers: {apikey: key, Authorization: "Bearer " + key}})
+  .then(function(r) { return r.json(); })
+  .then(function(d) { document.getElementById("result").textContent = "OK: " + JSON.stringify(d, null, 2); })
+  .catch(function(e) { document.getElementById("result").textContent = "ERRO: " + e.message; });
+</script>
+</body>
+</html>
