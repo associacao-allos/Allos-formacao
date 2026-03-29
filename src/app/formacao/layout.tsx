@@ -1,6 +1,7 @@
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import FloatingQuestionButton from "@/components/ui/FloatingQuestionButton";
+import BfcacheReload from "@/components/layout/BfcacheReload";
 import type { Metadata } from "next";
 
 export const dynamic = "force-dynamic";
@@ -43,6 +44,7 @@ export default function FormacaoLayout({
 }) {
   return (
     <>
+      <BfcacheReload />
       <Header />
       <div className="min-h-screen">{children}</div>
       <Footer />

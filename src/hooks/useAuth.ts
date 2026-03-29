@@ -75,8 +75,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             access_token: body.session.access_token,
             refresh_token: body.session.refresh_token,
           });
-          // Session bridged to localStorage — reload so all components pick it up
-          window.location.reload();
+          // Session bridged to localStorage — force hard navigation (bypass bfcache)
+          window.location.replace(window.location.pathname + "?_=" + Date.now());
           return;
         }
       } catch (err) {
