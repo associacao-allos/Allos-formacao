@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo } from "react";
 import { BookOpen, Bell, Mail } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useInView } from "react-intersection-observer";
-import { createClient } from "@/lib/supabase/client";
+import { createClient, createDataClient } from "@/lib/supabase/client";
 import CourseCard from "@/components/course/CourseCard";
 import CoursePreviewPopover from "@/components/course/CoursePreviewPopover";
 import CourseFilters from "@/components/course/CourseFilters";
@@ -39,7 +39,7 @@ export default function FormacaoPage() {
     let cancelled = false;
     async function fetchCourses() {
       try {
-        const client = createClient();
+        const client = createDataClient();
         const { data, error: fetchError } = await client
           .from("courses")
           .select(`

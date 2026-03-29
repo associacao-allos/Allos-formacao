@@ -52,16 +52,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     async function getUser() {
       try {
-        const result = await Promise.race([
-          supabase.auth.getSession(),
-          new Promise<null>((resolve) => setTimeout(() => resolve(null), 4000)),
-        ]);
+        // 1. Try localStorage first (fast, no network)
+        const { data: { session: localSession } } = await supabase.auth.getSession();
+        if (localSession?.user) {
+          if (cancelled) return;
+          currentUserIdRef.current = localSession.user.id;
+          setUser(localSession.user);
+          await fetchProfile(localSession.user.id);
+          return;
+        }
+
+        // 2. No local session — check server cookies and bridge to localStorage
+        const res = await fetch("/api/auth/session");
+        const { session: serverSession } = await res.json();
         if (cancelled) return;
-        const authUser = result?.data?.session?.user ?? null;
-        currentUserIdRef.current = authUser?.id ?? null;
-        setUser(authUser);
-        if (authUser) {
-          await fetchProfile(authUser.id);
+
+        if (serverSession?.access_token) {
+          const { data } = await supabase.auth.setSession({
+            access_token: serverSession.access_token,
+            refresh_token: serverSession.refresh_token,
+          });
+          const authUser = data?.user ?? null;
+          currentUserIdRef.current = authUser?.id ?? null;
+          setUser(authUser);
+          if (authUser) {
+            await fetchProfile(authUser.id);
+          }
         }
       } catch {
         // Auth fetch failed — continue with null user

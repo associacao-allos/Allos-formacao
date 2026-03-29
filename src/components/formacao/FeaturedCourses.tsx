@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useInView } from "react-intersection-observer";
 import { Radio, ArrowRight } from "lucide-react";
-import { createClient } from "@/lib/supabase/client";
+import { createDataClient } from "@/lib/supabase/client";
 import Link from "next/link";
 
 interface FeaturedCourse {
@@ -26,7 +26,7 @@ export default function FeaturedCourses() {
 
   useEffect(() => {
     async function fetch() {
-      const { data } = await createClient()
+      const { data } = await createDataClient()
         .from("courses")
         .select("*")
         .eq("status", "published")
