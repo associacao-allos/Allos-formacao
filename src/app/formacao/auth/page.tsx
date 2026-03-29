@@ -1,7 +1,8 @@
 "use client";
 
-import { Suspense, useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { Suspense, useState, useEffect } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
+import { useAuth } from "@/hooks/useAuth";
 import LoginForm from "@/components/auth/LoginForm";
 import RegisterForm from "@/components/auth/RegisterForm";
 import GoogleButton from "@/components/auth/GoogleButton";
@@ -11,6 +12,14 @@ function AuthContent() {
   const [tab, setTab] = useState<"login" | "register">("login");
   const searchParams = useSearchParams();
   const redirectTo = searchParams.get("redirect") || undefined;
+  const { user, loading } = useAuth();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!loading && user) {
+      router.replace(redirectTo || "/formacao");
+    }
+  }, [user, loading, router, redirectTo]);
 
   return (
     <div className="min-h-screen flex items-center justify-center px-4 py-12" style={{ background: "#111111" }}>
