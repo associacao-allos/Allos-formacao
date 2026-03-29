@@ -52,10 +52,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     async function getUser() {
       try {
-        const {
-          data: { user: authUser },
-        } = await supabase.auth.getUser();
+        const result = await Promise.race([
+          supabase.auth.getUser(),
+          new Promise<null>((resolve) => setTimeout(() => resolve(null), 4000)),
+        ]);
         if (cancelled) return;
+        const authUser = result?.data?.user ?? null;
         currentUserIdRef.current = authUser?.id ?? null;
         setUser(authUser);
         if (authUser) {
