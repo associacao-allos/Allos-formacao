@@ -102,3 +102,12 @@ export function clearLocalStorageCookies() {
   if (typeof window === "undefined") return;
   localStorage.removeItem(STORAGE_KEY);
 }
+
+/**
+ * Reset the singleton client so the next createClient() call
+ * creates a fresh instance. Use after bfcache restore to avoid
+ * stale internal auth state.
+ */
+export function resetClient() {
+  client = null;
+}

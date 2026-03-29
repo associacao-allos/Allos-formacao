@@ -11,7 +11,7 @@ import {
   type ReactNode,
 } from "react";
 import { createElement } from "react";
-import { createClient } from "@/lib/supabase/client";
+import { createClient, resetClient } from "@/lib/supabase/client";
 import type { Profile } from "@/types";
 import type { User, Session } from "@supabase/supabase-js";
 
@@ -43,9 +43,11 @@ export function AuthProvider({
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
-  const supabase = useMemo(() => createClient(), []);
+  const [initCounter, setInitCounter] = useState(0);
+  // Re-create client when initCounter changes (bfcache restore)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const supabase = useMemo(() => createClient(), [initCounter]);
   const currentUserIdRef = useRef<string | null>(null);
-  const initializedRef = useRef(false);
 
   const fetchProfile = useCallback(
     async (userId: string) => {
@@ -82,9 +84,23 @@ export function AuthProvider({
     [fetchProfile]
   );
 
+  // Re-initialize auth on bfcache restore (F5 / back-forward navigation).
+  // When the browser restores a page from bfcache, the entire JS heap is
+  // reused, so useEffect cleanup never ran and refs keep stale values.
+  // The "pageshow" event with persisted=true detects this case.
   useEffect(() => {
-    if (initializedRef.current) return;
-    initializedRef.current = true;
+    function onPageShow(e: PageTransitionEvent) {
+      if (e.persisted) {
+        resetClient();
+        setLoading(true);
+        setInitCounter((c) => c + 1);
+      }
+    }
+    window.addEventListener("pageshow", onPageShow);
+    return () => window.removeEventListener("pageshow", onPageShow);
+  }, []);
+
+  useEffect(() => {
     let cancelled = false;
 
     async function init() {
@@ -180,7 +196,7 @@ export function AuthProvider({
       cancelled = true;
       subscription.unsubscribe();
     };
-  }, [supabase, fetchProfile, initialSession, applySession]);
+  }, [supabase, fetchProfile, initialSession, applySession, initCounter]);
 
   const signOut = useCallback(async () => {
     currentUserIdRef.current = null;
