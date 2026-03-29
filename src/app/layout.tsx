@@ -39,6 +39,25 @@ export default function RootLayout({
 }) {
   return (
     <html lang="pt-BR" className={`${playfair.variable} ${inter.variable}`}>
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              // Detect bfcache restoration and force hard reload
+              window.addEventListener('pageshow', function(e) {
+                if (e.persisted) { location.reload(); }
+              });
+              // Detect F5 serving from disk cache (transferSize === 0)
+              try {
+                var nav = performance.getEntriesByType('navigation')[0];
+                if (nav && nav.transferSize === 0 && nav.type === 'reload') {
+                  location.replace(location.pathname + '?_r=' + Date.now());
+                }
+              } catch(e) {}
+            `,
+          }}
+        />
+      </head>
       <body className="font-dm relative z-10 bg-[#111111]">
         <AuthProvider>
         <a href="#main-content" className="skip-link">
