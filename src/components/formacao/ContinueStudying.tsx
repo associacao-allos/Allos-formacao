@@ -37,7 +37,7 @@ export default function ContinueStudying() {
         .select(`
           course_id,
           course:courses!enrollments_course_id_fkey(
-            id, title, slug, thumbnail_url, total_duration_minutes,
+            id, title, slug, thumbnail_url, total_duration_minutes, status,
             instructor:profiles!courses_instructor_id_fkey(full_name)
           )
         `)
@@ -49,7 +49,16 @@ export default function ContinueStudying() {
         return;
       }
 
-      const courseIds = enrollments.map((e) => e.course_id);
+      // Filter out archived courses
+      const validEnrollments = enrollments.filter(
+        (e) => (e.course as unknown as { status?: string })?.status !== "archived"
+      );
+      if (validEnrollments.length === 0) {
+        setLoading(false);
+        return;
+      }
+
+      const courseIds = validEnrollments.map((e) => e.course_id);
 
       // Get total lessons per course (via sections)
       const { data: sections } = await client

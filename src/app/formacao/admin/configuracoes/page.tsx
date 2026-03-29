@@ -63,13 +63,16 @@ export default function AdminConfiguracoesPage() {
       return;
     }
 
-    const { error } = await createClient()
-      .from("profiles")
-      .update({ role: newRole })
-      .eq("id", editingUser.id);
+    const res = await fetch("/formacao/admin/configuracoes/update-role", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ userId: editingUser.id, role: newRole }),
+    });
 
-    if (error) {
-      toast.error("Erro ao atualizar permissão.");
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      toast.error(data.error || "Erro ao atualizar permissão.");
       return;
     }
 

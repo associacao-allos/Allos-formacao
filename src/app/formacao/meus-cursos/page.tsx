@@ -55,7 +55,7 @@ export default function MeusCursosPage() {
           status,
           enrolled_at,
           course:courses!enrollments_course_id_fkey(
-            id, title, slug, thumbnail_url, total_duration_minutes, certificate_enabled,
+            id, title, slug, thumbnail_url, total_duration_minutes, certificate_enabled, status,
             instructor:profiles!courses_instructor_id_fkey(full_name)
           )
         `)
@@ -68,7 +68,16 @@ export default function MeusCursosPage() {
         return;
       }
 
-      const courseIds = enrollments.map((e) => e.course_id);
+      // Filter out archived courses
+      const validEnrollments = enrollments.filter(
+        (e) => (e.course as unknown as { status?: string })?.status !== "archived"
+      );
+      if (validEnrollments.length === 0) {
+        setLoading(false);
+        return;
+      }
+
+      const courseIds = validEnrollments.map((e) => e.course_id);
 
       const [sectionsRes, progressRes] = await Promise.all([
         client
