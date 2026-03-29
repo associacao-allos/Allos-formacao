@@ -71,17 +71,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (cancelled) return;
 
         if (body.session?.access_token) {
-          const { data, error } = await supabase.auth.setSession({
+          await supabase.auth.setSession({
             access_token: body.session.access_token,
             refresh_token: body.session.refresh_token,
           });
-          console.log("[AUTH] setSession:", error ? `error: ${error.message}` : "ok");
-          const authUser = data?.user ?? null;
-          currentUserIdRef.current = authUser?.id ?? null;
-          setUser(authUser);
-          if (authUser) {
-            await fetchProfile(authUser.id);
-          }
+          // Session bridged to localStorage — reload so all components pick it up
+          window.location.reload();
+          return;
         }
       } catch (err) {
         console.error("[AUTH] error:", err);
