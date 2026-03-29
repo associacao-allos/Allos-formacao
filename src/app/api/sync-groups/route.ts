@@ -3,8 +3,6 @@ import { createServiceRoleClient } from '@/lib/supabase/server'
 
 export const dynamic = "force-dynamic";
 
-export const dynamic = 'force-dynamic'
-
 export async function GET() {
   try {
     const sb = await createServiceRoleClient()
