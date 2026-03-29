@@ -87,7 +87,7 @@ export default function SyncGroupsSection() {
   useEffect(() => {
     async function fetchSchedule() {
       try {
-        const res = await fetch("/api/certificados/formacao?type=cronograma_publico");
+        const res = await fetch(`/api/certificados/formacao?type=cronograma_publico&_t=${Date.now()}`);
         if (!res.ok) throw new Error("Failed to fetch");
         const data = await res.json();
         if (data.visivel === false) { setVisivel(false); return; }
@@ -105,7 +105,7 @@ export default function SyncGroupsSection() {
 
   // Ranking fetch
   useEffect(() => {
-    fetch(`/api/ranking?period=${rankingPeriod}`)
+    fetch(`/api/ranking?period=${rankingPeriod}&_t=${Date.now()}`)
       .then(r => r.json())
       .then(d => { if (Array.isArray(d)) setRankingData(d); })
       .catch(() => setRankingData([]));
