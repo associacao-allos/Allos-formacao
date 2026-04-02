@@ -71,7 +71,7 @@ export default function CertificadoPage() {
         .eq("slug", slug)
         .single();
 
-      if (!courseData || courseData.course_type === "sync") {
+      if (!courseData || courseData.course_type === "sync" || courseData.is_discontinued) {
         router.push(`/formacao/curso/${slug}`);
         return;
       }

@@ -102,8 +102,8 @@ export default function AcervoPage() {
             >
               <p className="font-dm text-sm text-cream/40 leading-relaxed">
                 Estes são cursos e grupos de formação que tiveram suas atividades encerradas.
-                Apesar de descontinuados, todas as aulas gravadas continuam disponíveis para
-                assistir e ainda contam para emissão de certificados. O conteúdo não será removido.
+                As aulas gravadas continuam disponíveis para estudo, mas não geram certificado.
+                O conteúdo não será removido.
               </p>
             </div>
           </div>

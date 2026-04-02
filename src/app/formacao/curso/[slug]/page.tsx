@@ -546,7 +546,7 @@ export default function CoursePage() {
           </div>
 
           {/* Collection certificate progress */}
-          {isCollection && course.cert_lessons_required && (
+          {isCollection && course.cert_lessons_required && !course.is_discontinued && (
             (() => {
               const req = course.cert_lessons_required!;
               const lessonsInNextCert = completedLessons % req;
@@ -601,8 +601,8 @@ export default function CoursePage() {
             })()
           )}
 
-          {/* Completion celebration (hidden for sync and collection courses) */}
-          {allComplete && !isSync && !isCollection && (
+          {/* Completion celebration (hidden for sync, collection, and discontinued courses) */}
+          {allComplete && !isSync && !isCollection && !course?.is_discontinued && (
             <motion.div
               initial={{ opacity: 0, y: 20, scale: 0.95 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
