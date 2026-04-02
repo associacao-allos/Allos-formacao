@@ -91,10 +91,21 @@ export default function AcervoPage() {
                   Acervo
                 </h1>
                 <p className="text-sm text-cream/30 mt-0.5">
-                  Cursos e grupos descontinuados. O conteúdo continua disponível.
+                  Cursos e grupos que foram descontinuados.
                 </p>
               </div>
             </motion.div>
+
+            <div
+              className="mt-6 p-4 rounded-xl"
+              style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.05)" }}
+            >
+              <p className="font-dm text-sm text-cream/40 leading-relaxed">
+                Estes são cursos e grupos de formação que tiveram suas atividades encerradas.
+                Apesar de descontinuados, todas as aulas gravadas continuam disponíveis para
+                assistir e ainda contam para emissão de certificados. O conteúdo não será removido.
+              </p>
+            </div>
           </div>
         </section>
 
