@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useMemo, useRef } from "react";
+import dynamic from "next/dynamic";
 import { createClient } from "@/lib/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import Button from "@/components/ui/Button";
@@ -17,9 +18,31 @@ import {
   CheckSquare,
   Square,
   AlertTriangle,
+  ChevronDown,
+  MessageSquare,
+  Users,
+  Star,
 } from "lucide-react";
 import { toast } from "sonner";
 import type { CertificadoSubmission, CertificadoAtividade } from "@/types";
+
+const CertificateGenerator = dynamic(
+  () => import("@/components/certificado/CertificateGenerator"),
+  { ssr: false }
+);
+
+function horasExtenso(h: number): string {
+  const unidades = ["zero","uma","duas","três","quatro","cinco","seis","sete","oito","nove"];
+  const especiais = ["dez","onze","doze","treze","quatorze","quinze","dezesseis","dezessete","dezoito","dezenove"];
+  const dezenas = ["","","vinte","trinta","quarenta","cinquenta","sessenta","setenta","oitenta","noventa"];
+  if (h < 0) return "zero";
+  if (h < 10) return unidades[h];
+  if (h < 20) return especiais[h - 10];
+  if (h < 100) { const d = Math.floor(h / 10); const u = h % 10; return u === 0 ? dezenas[d] : `${dezenas[d]} e ${unidades[u]}`; }
+  if (h === 100) return "cem";
+  if (h < 200) return `cento e ${horasExtenso(h - 100)}`;
+  return String(h);
+}
 
 type TimeFilter = "month" | "quarter" | "semester" | "year" | "all";
 
@@ -56,6 +79,8 @@ export default function AdminEnviosPage() {
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [importing, setImporting] = useState(false);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [showCertFor, setShowCertFor] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -472,45 +497,150 @@ export default function AdminEnviosPage() {
             </thead>
             <tbody>
               <AnimatePresence mode="popLayout">
-                {filtered.map((s) => (
-                  <motion.tr
-                    key={s.id}
-                    layout
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    className="border-b border-[rgba(255,255,255,0.04)] hover:bg-[rgba(255,255,255,0.02)] transition-colors"
-                  >
-                    <td className="px-3 py-2.5">
-                      <button
-                        onClick={() => toggleSelect(s.id)}
-                        className="text-[#FDFBF7]/50 hover:text-[#FDFBF7]"
-                      >
-                        {selected.has(s.id) ? (
-                          <CheckSquare size={16} className="text-[#C84B31]" />
-                        ) : (
-                          <Square size={16} />
-                        )}
-                      </button>
-                    </td>
-                    <td className="px-3 py-2.5 text-[#FDFBF7]">{s.nome_completo}</td>
-                    <td className="px-3 py-2.5 text-[#FDFBF7]/60">{s.email}</td>
-                    <td className="px-3 py-2.5 text-[#FDFBF7]/70">{s.atividade_nome}</td>
-                    <td className="px-3 py-2.5 text-center text-[#FDFBF7]/70">{s.nota_grupo}</td>
-                    <td className="px-3 py-2.5 text-center text-[#FDFBF7]/70">{s.nota_condutor}</td>
-                    <td className="px-3 py-2.5 text-[#FDFBF7]/50">
-                      {new Date(s.created_at).toLocaleDateString("pt-BR")}
-                    </td>
-                    <td className="px-3 py-2.5">
-                      <button
-                        onClick={() => setDeleteId(s.id)}
-                        className="text-[#FDFBF7]/30 hover:text-red-400 transition-colors"
-                      >
-                        <Trash2 size={15} />
-                      </button>
-                    </td>
-                  </motion.tr>
-                ))}
+                {filtered.map((s) => {
+                  const isExpanded = expandedId === s.id;
+                  const atv = atividades.find(a => a.nome === s.atividade_nome);
+                  const ch = atv?.carga_horaria || 2;
+                  return (
+                    <motion.tr
+                      key={s.id}
+                      layout
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      className="border-b border-[rgba(255,255,255,0.04)] hover:bg-[rgba(255,255,255,0.02)] transition-colors align-top"
+                    >
+                      <td className="px-3 py-2.5">
+                        <button
+                          onClick={() => toggleSelect(s.id)}
+                          className="text-[#FDFBF7]/50 hover:text-[#FDFBF7]"
+                        >
+                          {selected.has(s.id) ? (
+                            <CheckSquare size={16} className="text-[#C84B31]" />
+                          ) : (
+                            <Square size={16} />
+                          )}
+                        </button>
+                      </td>
+                      <td className="px-3 py-2.5 text-[#FDFBF7]">{s.nome_completo}</td>
+                      <td className="px-3 py-2.5 text-[#FDFBF7]/60">{s.email}</td>
+                      <td className="px-3 py-2.5 text-[#FDFBF7]/70">{s.atividade_nome}</td>
+                      <td className="px-3 py-2.5 text-center text-[#FDFBF7]/70">{s.nota_grupo}</td>
+                      <td className="px-3 py-2.5 text-center text-[#FDFBF7]/70">{s.nota_condutor}</td>
+                      <td className="px-3 py-2.5 text-[#FDFBF7]/50">
+                        {new Date(s.created_at).toLocaleDateString("pt-BR")}
+                      </td>
+                      <td className="px-3 py-2.5">
+                        <div className="flex items-center gap-1">
+                          <button
+                            onClick={() => setExpandedId(isExpanded ? null : s.id)}
+                            className="text-[#FDFBF7]/30 hover:text-[#FDFBF7]/70 transition-colors"
+                            title="Ver detalhes"
+                          >
+                            <ChevronDown size={15} className={`transition-transform ${isExpanded ? "rotate-180" : ""}`} />
+                          </button>
+                          <button
+                            onClick={() => setDeleteId(s.id)}
+                            className="text-[#FDFBF7]/30 hover:text-red-400 transition-colors"
+                          >
+                            <Trash2 size={15} />
+                          </button>
+                        </div>
+                        {/* Expanded detail panel */}
+                        <AnimatePresence>
+                          {isExpanded && (
+                            <motion.div
+                              initial={{ opacity: 0, height: 0 }}
+                              animate={{ opacity: 1, height: "auto" }}
+                              exit={{ opacity: 0, height: 0 }}
+                              className="col-span-8 mt-3 -mx-3"
+                              style={{ width: "calc(100% + 1.5rem)" }}
+                            >
+                              <div className="p-4 rounded-xl space-y-4" style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)" }}>
+                                {/* Condutores */}
+                                {s.condutores && s.condutores.length > 0 && (
+                                  <div className="flex items-start gap-2">
+                                    <Users size={14} className="text-[#C84B31] mt-0.5 flex-shrink-0" />
+                                    <div>
+                                      <p className="text-xs text-[#FDFBF7]/40 mb-1">Condutores</p>
+                                      <div className="flex flex-wrap gap-1.5">
+                                        {s.condutores.map((c) => (
+                                          <span key={c} className="text-xs px-2 py-0.5 rounded-full text-[#FDFBF7]/70" style={{ background: "rgba(200,75,49,0.1)", border: "1px solid rgba(200,75,49,0.15)" }}>
+                                            {c}
+                                          </span>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  </div>
+                                )}
+
+                                {/* Notas */}
+                                <div className="flex items-start gap-2">
+                                  <Star size={14} className="text-[#C84B31] mt-0.5 flex-shrink-0" />
+                                  <div className="flex gap-4">
+                                    <div>
+                                      <p className="text-xs text-[#FDFBF7]/40">Nota Grupo</p>
+                                      <p className="text-sm text-[#FDFBF7] font-medium">{s.nota_grupo}/10</p>
+                                    </div>
+                                    <div>
+                                      <p className="text-xs text-[#FDFBF7]/40">Nota Condutor</p>
+                                      <p className="text-sm text-[#FDFBF7] font-medium">{s.nota_condutor}/10</p>
+                                    </div>
+                                  </div>
+                                </div>
+
+                                {/* Relato */}
+                                {s.relato && (
+                                  <div className="flex items-start gap-2">
+                                    <MessageSquare size={14} className="text-[#C84B31] mt-0.5 flex-shrink-0" />
+                                    <div>
+                                      <p className="text-xs text-[#FDFBF7]/40 mb-1">Relato</p>
+                                      <p className="text-sm text-[#FDFBF7]/70 leading-relaxed">{s.relato}</p>
+                                    </div>
+                                  </div>
+                                )}
+
+                                {/* Certificado */}
+                                <div className="pt-2 border-t border-[rgba(255,255,255,0.06)]">
+                                  {showCertFor === s.id ? (
+                                    <div className="space-y-3">
+                                      <div className="flex items-center justify-between">
+                                        <p className="text-xs text-[#FDFBF7]/40">Certificado de Participação</p>
+                                        <button
+                                          onClick={() => setShowCertFor(null)}
+                                          className="text-xs text-[#FDFBF7]/30 hover:text-[#FDFBF7]/60"
+                                        >
+                                          Fechar preview
+                                        </button>
+                                      </div>
+                                      <CertificateGenerator
+                                        data={{
+                                          nomeParticipante: s.nome_social || s.nome_completo,
+                                          atividade: s.atividade_nome,
+                                          data: s.created_at.split("T")[0],
+                                          cargaHoraria: ch,
+                                          cargaHorariaExtenso: horasExtenso(ch),
+                                        }}
+                                      />
+                                    </div>
+                                  ) : (
+                                    <button
+                                      onClick={() => setShowCertFor(s.id)}
+                                      className="flex items-center gap-2 text-xs text-[#C84B31] hover:text-[#C84B31]/80 transition-colors font-dm font-medium"
+                                    >
+                                      <Download size={14} />
+                                      Gerar e baixar certificado
+                                    </button>
+                                  )}
+                                </div>
+                              </div>
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+                      </td>
+                    </motion.tr>
+                  );
+                })}
               </AnimatePresence>
             </tbody>
           </table>

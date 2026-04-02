@@ -17,7 +17,9 @@ import {
   Trash2,
   RefreshCw,
   Activity,
+  BarChart3,
 } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import type { CertificadoAtividade } from "@/types";
 
@@ -37,6 +39,7 @@ export default function AtividadesPage() {
   const [editDescricao, setEditDescricao] = useState("");
 
   const [deleteTarget, setDeleteTarget] = useState<CertificadoAtividade | null>(null);
+  const router = useRouter();
 
   useEffect(() => {
     async function fetch() {
@@ -380,6 +383,14 @@ export default function AtividadesPage() {
               </div>
 
               <div className="flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
+                <button
+                  onClick={() => router.push(`/formacao/admin/atividades/${item.id}`)}
+                  className="p-1.5 rounded-lg text-cream/20 hover:text-[#C84B31] hover:bg-[#C84B31]/10 transition-all"
+                  aria-label="Ver feedbacks"
+                  title="Ver feedbacks"
+                >
+                  <BarChart3 className="h-4 w-4" />
+                </button>
                 <button
                   onClick={() => handleToggleAtivo(item)}
                   className="p-1.5 rounded-lg text-cream/20 hover:text-cream/60 hover:bg-white/[.04] transition-all"
