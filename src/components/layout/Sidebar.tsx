@@ -37,11 +37,11 @@ const externalNav = [
 export default function Sidebar() {
   const pathname = usePathname();
   const { user, profile, isAdmin, isInstructor, signOut } = useAuth();
-  const [collapsed, setCollapsed] = useState(false);
+  const [collapsed, setCollapsed] = useState(true);
 
   useEffect(() => {
     const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved === "true") setCollapsed(true);
+    if (saved !== null) setCollapsed(saved !== "false");
   }, []);
 
   function toggle() {
@@ -359,12 +359,12 @@ export function useSidebarWidth() {
     window.addEventListener("resize", checkMobile);
 
     const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved === "true") setCollapsed(true);
+    if (saved !== null) setCollapsed(saved !== "false");
 
     // Listen for storage changes (same tab)
     const interval = setInterval(() => {
-      const current = localStorage.getItem(STORAGE_KEY) === "true";
-      setCollapsed(current);
+      const val = localStorage.getItem(STORAGE_KEY);
+      setCollapsed(val !== "false");
     }, 200);
 
     return () => {

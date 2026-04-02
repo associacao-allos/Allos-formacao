@@ -7,7 +7,7 @@ import { createClient } from "@/lib/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useCategories } from "@/hooks/useCategories";
 import HeroFormacao from "@/components/formacao/HeroFormacao";
-import ContinueStudying from "@/components/formacao/ContinueStudying";
+
 import SyncGroupsSection from "@/components/formacao/SyncGroupsSection";
 import CategoryCarousel from "@/components/formacao/CategoryCarousel";
 import CourseBackground from "@/components/course/CourseBackground";
@@ -148,9 +148,6 @@ export default function FormacaoPage() {
       {/* Hero */}
       <div className="relative z-10">
         <HeroFormacao />
-
-        {/* Continue studying (logged-in users with active enrollments) */}
-        <ContinueStudying />
 
         {/* Category carousels */}
         <section className="py-10 sm:py-14">
