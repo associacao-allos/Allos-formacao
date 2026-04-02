@@ -195,6 +195,7 @@ export default function CourseForm({ courseId }: CourseFormProps) {
   const [courseType, setCourseType] = useState<"async" | "sync" | "collection">("async");
   const [certLessonsRequired, setCertLessonsRequired] = useState<number | null>(null);
   const [certHoursValue, setCertHoursValue] = useState<number | null>(null);
+  const [isDiscontinued, setIsDiscontinued] = useState(false);
   const [defaultLessonThumbnail, setDefaultLessonThumbnail] = useState("");
   const STEPS = courseType === "collection" ? COLLECTION_STEPS : courseType === "sync" ? SYNC_STEPS : ALL_STEPS;
   const [learningPoints, setLearningPoints] = useState<string[]>([""]);
@@ -338,6 +339,7 @@ export default function CourseForm({ courseId }: CourseFormProps) {
       setCourseType(course.course_type || "async");
       setCertLessonsRequired(course.cert_lessons_required ?? null);
       setCertHoursValue(course.cert_hours_value ?? null);
+      setIsDiscontinued(course.is_discontinued ?? false);
       setDefaultLessonThumbnail(course.default_lesson_thumbnail_url || "");
       setLearningPoints(course.learning_points || [""]);
 
@@ -413,6 +415,7 @@ export default function CourseForm({ courseId }: CourseFormProps) {
       certificate_body_text: certificateBodyText || null,
       whatsapp_number: whatsappNumber || null,
       course_type: courseType,
+      is_discontinued: isDiscontinued,
       cert_lessons_required: courseType === "collection" ? (certLessonsRequired || null) : null,
       cert_hours_value: courseType === "collection" ? (certHoursValue || null) : null,
       default_lesson_thumbnail_url: defaultLessonThumbnail || null,
@@ -1038,6 +1041,19 @@ export default function CourseForm({ courseId }: CourseFormProps) {
             onChange={(e) => { setWhatsappNumber(e.target.value); markDirty(); }}
             placeholder="5531999999999"
           />
+
+          <label className="flex items-center gap-3 py-2">
+            <input
+              type="checkbox"
+              checked={isDiscontinued}
+              onChange={(e) => { setIsDiscontinued(e.target.checked); markDirty(); }}
+              className="w-5 h-5 accent-amber-500"
+            />
+            <div>
+              <span className="font-medium text-cream text-sm">Curso descontinuado</span>
+              <p className="text-xs text-cream/30">Não aparece no catálogo principal. Fica na página de acervo.</p>
+            </div>
+          </label>
 
           {/* Learning points */}
           <div>

@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { BookOpen, Bell, Mail } from "lucide-react";
+import Link from "next/link";
+import { BookOpen, Bell, Mail, Archive } from "lucide-react";
 import { motion } from "framer-motion";
 import { createClient } from "@/lib/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -37,6 +38,7 @@ export default function FormacaoPage() {
             instructor:profiles!courses_instructor_id_fkey(id, full_name, avatar_url)
           `)
           .eq("status", "published")
+          .neq("is_discontinued", true)
           .order("display_order", { ascending: true })
           .order("created_at", { ascending: false });
 
@@ -255,6 +257,17 @@ export default function FormacaoPage() {
             </motion.div>
           )}
         </section>
+
+        {/* Discontinued courses link */}
+        <div className="max-w-[1200px] mx-auto px-6 py-8 text-center">
+          <Link
+            href="/formacao/acervo"
+            className="inline-flex items-center gap-2 font-dm text-xs text-cream/20 hover:text-cream/40 transition-colors"
+          >
+            <Archive className="h-3.5 w-3.5" />
+            Ver cursos e grupos descontinuados
+          </Link>
+        </div>
 
         {/* Divider */}
         <div className="max-w-[1200px] mx-auto px-6">
