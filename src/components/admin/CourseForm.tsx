@@ -23,7 +23,27 @@ import {
   Eye,
   X,
   Sparkles,
+  Clock,
+  ArrowUp,
+  ArrowDown,
 } from "lucide-react";
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import type { Course, Section, Lesson, ExamQuestion, ExamOption } from "@/types";
 
 interface CourseFormProps {
@@ -130,6 +150,22 @@ function CategoryPicker({ categories, value, onChange }: { categories: string[];
   );
 }
 
+function SortableItem({ id, children }: { id: string; children: (props: { dragHandleProps: Record<string, unknown> }) => React.ReactNode }) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+    position: "relative" as const,
+    zIndex: isDragging ? 10 : "auto" as const,
+  };
+  return (
+    <div ref={setNodeRef} style={style} {...attributes}>
+      {children({ dragHandleProps: listeners as Record<string, unknown> })}
+    </div>
+  );
+}
+
 export default function CourseForm({ courseId }: CourseFormProps) {
   const router = useRouter();
   const { profile, isAdmin } = useAuth();
@@ -175,6 +211,9 @@ export default function CourseForm({ courseId }: CourseFormProps) {
   const [instructors, setInstructors] = useState<
     { value: string; label: string }[]
   >([]);
+
+  // Default duration input
+  const [defaultDuration, setDefaultDuration] = useState(90);
 
   // --- NEW STATE: delete confirmation ---
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
@@ -574,6 +613,96 @@ export default function CourseForm({ courseId }: CourseFormProps) {
     setDeleteConfirmId(null);
   }
 
+  // Move helpers
+  function moveSection(from: number, to: number) {
+    if (to < 0 || to >= sections.length) return;
+    markDirty();
+    setSections((prev) => arrayMove(prev, from, to));
+  }
+
+  function moveLesson(sectionIdx: number, from: number, to: number) {
+    markDirty();
+    setSections((prev) => {
+      const next = [...prev];
+      const section = { ...next[sectionIdx] };
+      if (to < 0 || to >= section.lessons.length) return prev;
+      section.lessons = arrayMove([...section.lessons], from, to);
+      next[sectionIdx] = section;
+      return next;
+    });
+  }
+
+  function moveLessonToSection(fromSectionIdx: number, lessonIdx: number, toSectionIdx: number) {
+    if (toSectionIdx < 0 || toSectionIdx >= sections.length || fromSectionIdx === toSectionIdx) return;
+    markDirty();
+    setSections((prev) => {
+      const next = [...prev];
+      const fromSection = { ...next[fromSectionIdx] };
+      const toSection = { ...next[toSectionIdx] };
+      const [lesson] = fromSection.lessons.splice(lessonIdx, 1);
+      toSection.lessons = [...toSection.lessons, { ...lesson, section_id: toSection.id }];
+      next[fromSectionIdx] = fromSection;
+      next[toSectionIdx] = toSection;
+      return next;
+    });
+  }
+
+  // Default duration for all lessons in a section
+  function setDefaultDurationForSection(sectionIdx: number, duration: number) {
+    markDirty();
+    setSections((prev) => {
+      const next = [...prev];
+      const section = { ...next[sectionIdx] };
+      section.lessons = section.lessons.map((l) => ({
+        ...l,
+        duration_minutes: duration,
+      }));
+      next[sectionIdx] = section;
+      return next;
+    });
+  }
+
+  // Default duration for ALL lessons
+  function setDefaultDurationForAll(duration: number) {
+    markDirty();
+    setSections((prev) =>
+      prev.map((section) => ({
+        ...section,
+        lessons: section.lessons.map((l) => ({
+          ...l,
+          duration_minutes: duration,
+        })),
+      }))
+    );
+  }
+
+  // DnD sensors
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+  );
+
+  function handleSectionDragEnd(event: DragEndEvent) {
+    const { active, over } = event;
+    if (over && active.id !== over.id) {
+      const oldIndex = sections.findIndex((s) => s.id === active.id);
+      const newIndex = sections.findIndex((s) => s.id === over.id);
+      moveSection(oldIndex, newIndex);
+    }
+  }
+
+  function handleLessonDragEnd(sectionIdx: number) {
+    return (event: DragEndEvent) => {
+      const { active, over } = event;
+      if (over && active.id !== over.id) {
+        const lessons = sections[sectionIdx].lessons;
+        const oldIndex = lessons.findIndex((l) => l.id === active.id);
+        const newIndex = lessons.findIndex((l) => l.id === over.id);
+        moveLesson(sectionIdx, oldIndex, newIndex);
+      }
+    };
+  }
+
   // Exam helpers
   function addQuestion() {
     markDirty();
@@ -915,105 +1044,122 @@ export default function CourseForm({ courseId }: CourseFormProps) {
       {/* Content step */}
       {step === "content" && (
         <div className="space-y-6">
-          {sections.map((section, si) => (
-            <div
-              key={section.id}
-              className="rounded-card p-6"
-              style={{
-                background: section.is_extra ? "rgba(139,92,246,0.04)" : "rgba(255,255,255,0.04)",
-                border: section.is_extra ? "1px solid rgba(139,92,246,0.15)" : "1px solid rgba(255,255,255,0.08)",
-              }}
+          {/* Default duration toolbar */}
+          <div
+            className="flex flex-wrap items-center gap-3 p-4 rounded-xl"
+            style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}
+          >
+            <Clock className="h-4 w-4 text-cream/30" />
+            <span className="text-xs text-cream/50 font-medium">Duração padrão:</span>
+            <input
+              type="number"
+              value={defaultDuration}
+              onChange={(e) => setDefaultDuration(parseInt(e.target.value) || 0)}
+              className="w-20 px-2.5 py-1.5 text-xs rounded-lg text-cream placeholder:text-cream/25 focus:outline-none"
+              style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", color: "rgba(253,251,247,0.9)" }}
+              min="1"
+            />
+            <span className="text-xs text-cream/30">min</span>
+            <button
+              type="button"
+              onClick={() => setDefaultDurationForAll(defaultDuration)}
+              className="px-3 py-1.5 rounded-lg text-xs font-medium transition-all hover:opacity-80"
+              style={{ background: "rgba(200,75,49,0.12)", border: "1px solid rgba(200,75,49,0.2)", color: "#C84B31" }}
             >
-              <div className="flex items-center gap-3 mb-4">
-                <GripVertical className="h-5 w-5 text-cream/20" />
-                {section.is_extra && (
-                  <span
-                    className="flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider flex-shrink-0"
-                    style={{ background: "rgba(139,92,246,0.15)", color: "rgb(167,139,250)", border: "1px solid rgba(139,92,246,0.25)" }}
-                  >
-                    <Sparkles className="h-3 w-3" />
-                    Extra
-                  </span>
-                )}
-                <input
-                  value={section.title}
-                  onChange={(e) => updateSection(si, e.target.value)}
-                  className="flex-1 font-semibold text-cream bg-transparent border-b border-transparent hover:border-white/10 focus:border-teal focus:outline-none py-1"
-                  placeholder="Nome da seção"
-                />
-                {/* Toggle extra */}
-                <button
-                  type="button"
-                  onClick={() => {
-                    markDirty();
-                    setSections((prev) => {
-                      const next = [...prev];
-                      next[si] = { ...next[si], is_extra: !next[si].is_extra };
-                      return next;
-                    });
-                  }}
-                  className="px-2.5 py-1 rounded-lg text-[11px] font-medium transition-all flex-shrink-0"
-                  style={{
-                    background: section.is_extra ? "rgba(139,92,246,0.12)" : "rgba(255,255,255,0.04)",
-                    border: section.is_extra ? "1px solid rgba(139,92,246,0.2)" : "1px solid rgba(255,255,255,0.06)",
-                    color: section.is_extra ? "rgb(167,139,250)" : "rgba(253,251,247,0.3)",
-                  }}
-                  title={section.is_extra ? "Módulo extra: não obrigatório para certificado" : "Tornar módulo extra (opcional)"}
-                >
-                  {section.is_extra ? "Extra ✓" : "Marcar extra"}
-                </button>
-                {/* Delete section with confirmation */}
-                {deleteConfirmId === `section-${section.id}` ? (
-                  <div className="flex items-center gap-1.5 text-xs">
-                    <span className="text-cream/40">Excluir seção?</span>
-                    <button
-                      onClick={() => removeSection(si)}
-                      className="px-2 py-0.5 bg-accent text-white rounded font-medium hover:bg-accent/90"
-                    >
-                      Sim
-                    </button>
-                    <button
-                      onClick={() => setDeleteConfirmId(null)}
-                      className="px-2 py-0.5 bg-white/10 text-cream/50 rounded font-medium hover:bg-white/15"
-                    >
-                      Não
-                    </button>
-                  </div>
-                ) : (
-                  <button
-                    onClick={() => setDeleteConfirmId(`section-${section.id}`)}
-                    className="p-1 text-cream/30 hover:text-accent"
-                    aria-label="Remover seção"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </button>
-                )}
-              </div>
+              Aplicar a todas as aulas
+            </button>
+          </div>
 
-              {/* Lessons */}
-              <div className="space-y-3 ml-8">
-                {section.lessons.map((lesson, li) => (
+          <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleSectionDragEnd}>
+            <SortableContext items={sections.map((s) => s.id)} strategy={verticalListSortingStrategy}>
+              {sections.map((section, si) => (
+                <SortableItem key={section.id} id={section.id}>
+                  {({ dragHandleProps }) => (
                   <div
-                    key={lesson.id}
-                    className="rounded-button p-4 space-y-3"
-                    style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}
+                    className="rounded-card p-6"
+                    style={{
+                      background: section.is_extra ? "rgba(139,92,246,0.04)" : "rgba(255,255,255,0.04)",
+                      border: section.is_extra ? "1px solid rgba(139,92,246,0.15)" : "1px solid rgba(255,255,255,0.08)",
+                    }}
                   >
-                    <div className="flex items-center gap-3">
-                      <GripVertical className="h-4 w-4 text-cream/20" />
+                    <div className="flex items-center gap-2 mb-4">
+                      <span className="cursor-grab active:cursor-grabbing touch-none" {...dragHandleProps}>
+                        <GripVertical className="h-5 w-5 text-cream/20 hover:text-cream/50 transition-colors" />
+                      </span>
+                      {/* Move section buttons */}
+                      <div className="flex flex-col gap-0.5">
+                        <button
+                          type="button"
+                          onClick={() => moveSection(si, si - 1)}
+                          disabled={si === 0}
+                          className="p-0.5 text-cream/20 hover:text-cream/60 disabled:opacity-20 disabled:cursor-not-allowed transition-colors"
+                          title="Mover para cima"
+                        >
+                          <ArrowUp className="h-3 w-3" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => moveSection(si, si + 1)}
+                          disabled={si === sections.length - 1}
+                          className="p-0.5 text-cream/20 hover:text-cream/60 disabled:opacity-20 disabled:cursor-not-allowed transition-colors"
+                          title="Mover para baixo"
+                        >
+                          <ArrowDown className="h-3 w-3" />
+                        </button>
+                      </div>
+                      {section.is_extra && (
+                        <span
+                          className="flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider flex-shrink-0"
+                          style={{ background: "rgba(139,92,246,0.15)", color: "rgb(167,139,250)", border: "1px solid rgba(139,92,246,0.25)" }}
+                        >
+                          <Sparkles className="h-3 w-3" />
+                          Extra
+                        </span>
+                      )}
                       <input
-                        value={lesson.title}
-                        onChange={(e) =>
-                          updateLesson(si, li, "title", e.target.value)
-                        }
-                        placeholder="Título da aula"
-                        className="flex-1 text-sm text-cream bg-transparent border-b border-transparent hover:border-white/10 focus:border-teal focus:outline-none py-1 placeholder:text-cream/25"
+                        value={section.title}
+                        onChange={(e) => updateSection(si, e.target.value)}
+                        className="flex-1 font-semibold text-cream bg-transparent border-b border-transparent hover:border-white/10 focus:border-teal focus:outline-none py-1"
+                        placeholder="Nome da seção"
                       />
-                      {/* Delete lesson with confirmation */}
-                      {deleteConfirmId === `lesson-${lesson.id}` ? (
+                      {/* Toggle extra */}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          markDirty();
+                          setSections((prev) => {
+                            const next = [...prev];
+                            next[si] = { ...next[si], is_extra: !next[si].is_extra };
+                            return next;
+                          });
+                        }}
+                        className="px-2.5 py-1 rounded-lg text-[11px] font-medium transition-all flex-shrink-0"
+                        style={{
+                          background: section.is_extra ? "rgba(139,92,246,0.12)" : "rgba(255,255,255,0.04)",
+                          border: section.is_extra ? "1px solid rgba(139,92,246,0.2)" : "1px solid rgba(255,255,255,0.06)",
+                          color: section.is_extra ? "rgb(167,139,250)" : "rgba(253,251,247,0.3)",
+                        }}
+                        title={section.is_extra ? "Módulo extra: não obrigatório para certificado" : "Tornar módulo extra (opcional)"}
+                      >
+                        {section.is_extra ? "Extra ✓" : "Marcar extra"}
+                      </button>
+                      {/* Default duration for section */}
+                      <button
+                        type="button"
+                        onClick={() => setDefaultDurationForSection(si, defaultDuration)}
+                        className="px-2 py-1 rounded-lg text-[10px] font-medium transition-all flex-shrink-0"
+                        style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)", color: "rgba(253,251,247,0.3)" }}
+                        title={`Aplicar ${defaultDuration}min a todas as aulas deste módulo`}
+                      >
+                        <Clock className="h-3 w-3 inline mr-1" />
+                        {defaultDuration}min
+                      </button>
+                      {/* Delete section with confirmation */}
+                      {deleteConfirmId === `section-${section.id}` ? (
                         <div className="flex items-center gap-1.5 text-xs">
-                          <span className="text-cream/40">Excluir?</span>
+                          <span className="text-cream/40">Excluir seção?</span>
                           <button
-                            onClick={() => removeLesson(si, li)}
+                            onClick={() => removeSection(si)}
                             className="px-2 py-0.5 bg-accent text-white rounded font-medium hover:bg-accent/90"
                           >
                             Sim
@@ -1027,94 +1173,174 @@ export default function CourseForm({ courseId }: CourseFormProps) {
                         </div>
                       ) : (
                         <button
-                          onClick={() => setDeleteConfirmId(`lesson-${lesson.id}`)}
+                          onClick={() => setDeleteConfirmId(`section-${section.id}`)}
                           className="p-1 text-cream/30 hover:text-accent"
-                          aria-label="Remover aula"
+                          aria-label="Remover seção"
                         >
-                          <Trash2 className="h-3.5 w-3.5" />
+                          <Trash2 className="h-4 w-4" />
                         </button>
                       )}
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                      <div>
-                        <input
-                          value={lesson.video_url || ""}
-                          onChange={(e) =>
-                            updateLesson(si, li, "video_url", e.target.value)
-                          }
-                          placeholder="URL do vídeo (YouTube / Drive)"
-                          className="w-full px-3 py-2 text-xs rounded-button focus:outline-none focus:border-teal text-cream placeholder:text-cream/25"
-                          style={{ background: "rgba(255,255,255,0.04)", border: "1.5px solid rgba(255,255,255,0.08)", color: "rgba(253,251,247,0.9)" }}
-                        />
-                        {/* Video URL preview */}
-                        <VideoUrlPreview url={lesson.video_url} />
-                      </div>
-                      <div>
-                        <label className="text-[10px] text-cream/30 uppercase tracking-wider mb-1 block">Duração (min)</label>
-                        <input
-                          type="number"
-                          value={lesson.duration_minutes || ""}
-                          onChange={(e) =>
-                            updateLesson(
-                              si,
-                              li,
-                              "duration_minutes",
-                              parseInt(e.target.value) || null
-                            )
-                          }
-                          placeholder="Ex: 45"
-                          className="w-full px-3 py-2 text-xs rounded-button focus:outline-none focus:border-teal text-cream placeholder:text-cream/25"
-                          style={{ background: "rgba(255,255,255,0.04)", border: "1.5px solid rgba(255,255,255,0.08)", color: "rgba(253,251,247,0.9)" }}
-                        />
-                      </div>
+                    {/* Lessons */}
+                    <div className="space-y-3 ml-8">
+                      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleLessonDragEnd(si)}>
+                        <SortableContext items={section.lessons.map((l) => l.id)} strategy={verticalListSortingStrategy}>
+                          {section.lessons.map((lesson, li) => (
+                            <SortableItem key={lesson.id} id={lesson.id}>
+                              {({ dragHandleProps: lessonDragProps }) => (
+                              <div
+                                className="rounded-button p-4 space-y-3"
+                                style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}
+                              >
+                                <div className="flex items-center gap-2">
+                                  <span className="cursor-grab active:cursor-grabbing touch-none" {...lessonDragProps}>
+                                    <GripVertical className="h-4 w-4 text-cream/20 hover:text-cream/50 transition-colors" />
+                                  </span>
+                                  {/* Move lesson buttons */}
+                                  <div className="flex flex-col gap-0.5">
+                                    <button
+                                      type="button"
+                                      onClick={() => moveLesson(si, li, li - 1)}
+                                      disabled={li === 0}
+                                      className="p-0.5 text-cream/20 hover:text-cream/60 disabled:opacity-20 disabled:cursor-not-allowed transition-colors"
+                                      title="Mover para cima"
+                                    >
+                                      <ArrowUp className="h-2.5 w-2.5" />
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => moveLesson(si, li, li + 1)}
+                                      disabled={li === section.lessons.length - 1}
+                                      className="p-0.5 text-cream/20 hover:text-cream/60 disabled:opacity-20 disabled:cursor-not-allowed transition-colors"
+                                      title="Mover para baixo"
+                                    >
+                                      <ArrowDown className="h-2.5 w-2.5" />
+                                    </button>
+                                  </div>
+                                  <input
+                                    value={lesson.title}
+                                    onChange={(e) =>
+                                      updateLesson(si, li, "title", e.target.value)
+                                    }
+                                    placeholder="Título da aula"
+                                    className="flex-1 text-sm text-cream bg-transparent border-b border-transparent hover:border-white/10 focus:border-teal focus:outline-none py-1 placeholder:text-cream/25"
+                                  />
+                                  {/* Delete lesson with confirmation */}
+                                  {deleteConfirmId === `lesson-${lesson.id}` ? (
+                                    <div className="flex items-center gap-1.5 text-xs">
+                                      <span className="text-cream/40">Excluir?</span>
+                                      <button
+                                        onClick={() => removeLesson(si, li)}
+                                        className="px-2 py-0.5 bg-accent text-white rounded font-medium hover:bg-accent/90"
+                                      >
+                                        Sim
+                                      </button>
+                                      <button
+                                        onClick={() => setDeleteConfirmId(null)}
+                                        className="px-2 py-0.5 bg-white/10 text-cream/50 rounded font-medium hover:bg-white/15"
+                                      >
+                                        Não
+                                      </button>
+                                    </div>
+                                  ) : (
+                                    <button
+                                      onClick={() => setDeleteConfirmId(`lesson-${lesson.id}`)}
+                                      className="p-1 text-cream/30 hover:text-accent"
+                                      aria-label="Remover aula"
+                                    >
+                                      <Trash2 className="h-3.5 w-3.5" />
+                                    </button>
+                                  )}
+                                </div>
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                  <div>
+                                    <input
+                                      value={lesson.video_url || ""}
+                                      onChange={(e) =>
+                                        updateLesson(si, li, "video_url", e.target.value)
+                                      }
+                                      placeholder="URL do vídeo (YouTube / Drive)"
+                                      className="w-full px-3 py-2 text-xs rounded-button focus:outline-none focus:border-teal text-cream placeholder:text-cream/25"
+                                      style={{ background: "rgba(255,255,255,0.04)", border: "1.5px solid rgba(255,255,255,0.08)", color: "rgba(253,251,247,0.9)" }}
+                                    />
+                                    {/* Video URL preview */}
+                                    <VideoUrlPreview url={lesson.video_url} />
+                                  </div>
+                                  <div>
+                                    <label className="text-[10px] text-cream/30 uppercase tracking-wider mb-1 block">Duração (min)</label>
+                                    <input
+                                      type="number"
+                                      value={lesson.duration_minutes || ""}
+                                      onChange={(e) =>
+                                        updateLesson(
+                                          si,
+                                          li,
+                                          "duration_minutes",
+                                          parseInt(e.target.value) || null
+                                        )
+                                      }
+                                      placeholder="Ex: 45"
+                                      className="w-full px-3 py-2 text-xs rounded-button focus:outline-none focus:border-teal text-cream placeholder:text-cream/25"
+                                      style={{ background: "rgba(255,255,255,0.04)", border: "1.5px solid rgba(255,255,255,0.08)", color: "rgba(253,251,247,0.9)" }}
+                                    />
+                                  </div>
+                                </div>
+
+                                <input
+                                  value={lesson.thumbnail_url || ""}
+                                  onChange={(e) =>
+                                    updateLesson(si, li, "thumbnail_url", e.target.value)
+                                  }
+                                  placeholder="Thumbnail da aula (opcional — sobrescreve o padrão do curso)"
+                                  className="w-full px-3 py-2 text-xs rounded-button focus:outline-none focus:border-teal text-cream placeholder:text-cream/25"
+                                  style={{ background: "rgba(255,255,255,0.04)", border: "1.5px solid rgba(255,255,255,0.08)", color: "rgba(253,251,247,0.9)" }}
+                                />
+
+                                <textarea
+                                  value={lesson.description || ""}
+                                  onChange={(e) =>
+                                    updateLesson(si, li, "description", e.target.value)
+                                  }
+                                  placeholder="Descrição da aula (Markdown)"
+                                  rows={2}
+                                  className="w-full px-3 py-2 text-xs rounded-button resize-y focus:outline-none focus:border-teal text-cream placeholder:text-cream/25"
+                                  style={{ background: "rgba(255,255,255,0.04)", border: "1.5px solid rgba(255,255,255,0.08)", color: "rgba(253,251,247,0.9)" }}
+                                />
+
+                                <label className="flex items-center gap-2 text-xs text-cream/50">
+                                  <input
+                                    type="checkbox"
+                                    checked={lesson.is_preview}
+                                    onChange={(e) =>
+                                      updateLesson(si, li, "is_preview", e.target.checked)
+                                    }
+                                    className="accent-teal"
+                                  />
+                                  Preview gratuito
+                                </label>
+                              </div>
+                              )}
+                            </SortableItem>
+                          ))}
+                        </SortableContext>
+                      </DndContext>
+
+                      <button
+                        onClick={() => addLesson(si)}
+                        className="flex items-center gap-1 text-sm text-teal hover:text-teal-dark py-2"
+                      >
+                        <Plus className="h-3.5 w-3.5" />
+                        Nova aula
+                      </button>
                     </div>
-
-                    <input
-                      value={lesson.thumbnail_url || ""}
-                      onChange={(e) =>
-                        updateLesson(si, li, "thumbnail_url", e.target.value)
-                      }
-                      placeholder="Thumbnail da aula (opcional — sobrescreve o padrão do curso)"
-                      className="w-full px-3 py-2 text-xs rounded-button focus:outline-none focus:border-teal text-cream placeholder:text-cream/25"
-                      style={{ background: "rgba(255,255,255,0.04)", border: "1.5px solid rgba(255,255,255,0.08)", color: "rgba(253,251,247,0.9)" }}
-                    />
-
-                    <textarea
-                      value={lesson.description || ""}
-                      onChange={(e) =>
-                        updateLesson(si, li, "description", e.target.value)
-                      }
-                      placeholder="Descrição da aula (Markdown)"
-                      rows={2}
-                      className="w-full px-3 py-2 text-xs rounded-button resize-y focus:outline-none focus:border-teal text-cream placeholder:text-cream/25"
-                      style={{ background: "rgba(255,255,255,0.04)", border: "1.5px solid rgba(255,255,255,0.08)", color: "rgba(253,251,247,0.9)" }}
-                    />
-
-                    <label className="flex items-center gap-2 text-xs text-cream/50">
-                      <input
-                        type="checkbox"
-                        checked={lesson.is_preview}
-                        onChange={(e) =>
-                          updateLesson(si, li, "is_preview", e.target.checked)
-                        }
-                        className="accent-teal"
-                      />
-                      Preview gratuito
-                    </label>
                   </div>
-                ))}
-
-                <button
-                  onClick={() => addLesson(si)}
-                  className="flex items-center gap-1 text-sm text-teal hover:text-teal-dark py-2"
-                >
-                  <Plus className="h-3.5 w-3.5" />
-                  Nova aula
-                </button>
-              </div>
-            </div>
-          ))}
+                  )}
+                </SortableItem>
+              ))}
+            </SortableContext>
+          </DndContext>
 
           <div className="flex gap-3 flex-wrap">
             <Button variant="secondary" onClick={() => addSection(false)}>

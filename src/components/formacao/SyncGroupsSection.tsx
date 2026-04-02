@@ -175,7 +175,12 @@ export default function SyncGroupsSection() {
     return map;
   }, [schedule]);
 
-  if (loading || error || !visivel || schedule.length === 0) return null;
+  if (loading || error || !visivel) return null;
+
+  const hasSchedule = schedule.length > 0;
+  const hasRanking = rankingData.length > 0;
+
+  if (!hasSchedule && !hasRanking) return null;
 
   return (
     <section
@@ -186,7 +191,8 @@ export default function SyncGroupsSection() {
       }}
     >
       <div className="max-w-[1200px] mx-auto">
-        {/* Header */}
+        {/* Header — only show if schedule exists */}
+        {hasSchedule && (
         <div className="text-center mb-10">
           <motion.p
             initial={{ opacity: 0, y: 10 }}
@@ -217,9 +223,10 @@ export default function SyncGroupsSection() {
             Certificados são enviados no chat do Google Meet ao final de cada encontro.
           </motion.p>
         </div>
+        )}
 
         {/* Live / Upcoming banner */}
-        {liveOrNext.length > 0 && (
+        {hasSchedule && liveOrNext.length > 0 && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={inView ? { opacity: 1, y: 0 } : {}}
@@ -296,7 +303,7 @@ export default function SyncGroupsSection() {
         )}
 
         {/* Weekly schedule grid */}
-        <motion.div
+        {hasSchedule && <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={inView ? { opacity: 1, y: 0 } : {}}
           transition={{ delay: 0.3, duration: 0.6 }}
@@ -396,7 +403,7 @@ export default function SyncGroupsSection() {
               Avaliar no Google
             </a>
           </div>
-        </motion.div>
+        </motion.div>}
 
         {/* Ranking — compact, same visual language */}
         {rankingData.length > 0 && (

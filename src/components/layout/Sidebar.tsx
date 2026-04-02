@@ -8,7 +8,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Home,
   BookOpen,
-  Trophy,
   Award,
   User,
   LayoutDashboard,
@@ -23,7 +22,6 @@ const STORAGE_KEY = "allos-sidebar-collapsed";
 const mainNav = [
   { label: "Conteúdos", href: "/formacao", icon: Home },
   { label: "Meus cursos", href: "/formacao/meus-cursos", icon: BookOpen, auth: true },
-  { label: "Ranking", href: "/formacao#ranking", icon: Trophy },
   { label: "Certificado", href: "https://allos.org.br/certificado", icon: Award, external: true },
 ];
 
