@@ -1,5 +1,6 @@
-import Header from "@/components/layout/Header";
-import Footer from "@/components/layout/Footer";
+import Sidebar from "@/components/layout/Sidebar";
+import TopBar from "@/components/layout/TopBar";
+import SidebarOffset from "@/components/layout/SidebarOffset";
 import FloatingQuestionButton from "@/components/ui/FloatingQuestionButton";
 import type { Metadata } from "next";
 
@@ -43,9 +44,11 @@ export default function FormacaoLayout({
 }) {
   return (
     <>
-      <Header />
-      <div className="min-h-screen">{children}</div>
-      <Footer />
+      <Sidebar />
+      <SidebarOffset>
+        <TopBar />
+        <main className="min-h-screen pb-20 md:pb-0">{children}</main>
+      </SidebarOffset>
       <FloatingQuestionButton />
     </>
   );

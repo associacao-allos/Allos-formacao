@@ -54,6 +54,15 @@ body::after {
 
 ::selection { background: rgba(200, 75, 49, 0.35); color: #fff; }
 
+/* Hide scrollbar for carousel */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
 /* Skip link */
 .skip-link {
   position: absolute; top: -40px; left: 0;

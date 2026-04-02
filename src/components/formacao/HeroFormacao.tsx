@@ -125,7 +125,7 @@ export default function HeroFormacao() {
   return (
     <section
       className="relative overflow-hidden flex items-center"
-      style={{ background: "rgba(13,13,13,0.7)", minHeight: "min(70vh, 660px)" }}
+      style={{ background: "rgba(13,13,13,0.7)", minHeight: "min(45vh, 420px)" }}
     >
       {/* Grain */}
       <div
@@ -138,7 +138,7 @@ export default function HeroFormacao() {
 
       <MovingGradient />
 
-      <div className="relative z-10 w-full max-w-[1200px] mx-auto px-5 sm:px-6 md:px-10 py-20 sm:py-24 md:py-28">
+      <div className="relative z-10 w-full max-w-[1200px] mx-auto px-5 sm:px-6 md:px-8 py-12 sm:py-16 md:py-20">
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-10 lg:gap-16 items-center">
           {/* Left — text (3 cols) */}
           <div className="lg:col-span-3">
