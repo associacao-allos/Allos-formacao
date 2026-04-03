@@ -227,6 +227,10 @@ export default function CourseForm({ courseId }: CourseFormProps) {
   // --- NEW STATE: delete confirmation ---
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
 
+  // --- Track deleted sections/lessons for DB cleanup ---
+  const [deletedSectionIds, setDeletedSectionIds] = useState<string[]>([]);
+  const [deletedLessonIds, setDeletedLessonIds] = useState<string[]>([]);
+
   // --- NEW STATE: unsaved changes tracking ---
   const [isDirty, setIsDirty] = useState(false);
   const [initialLoadDone, setInitialLoadDone] = useState(false);
@@ -453,8 +457,29 @@ export default function CourseForm({ courseId }: CourseFormProps) {
 
     // Save sections and lessons
     if (savedCourseId) {
-      for (let si = 0; si < sections.length; si++) {
-        const section = sections[si];
+      // Delete removed lessons from DB first
+      if (deletedLessonIds.length > 0) {
+        await createClient()
+          .from("lessons")
+          .delete()
+          .in("id", deletedLessonIds);
+        setDeletedLessonIds([]);
+      }
+
+      // Delete removed sections from DB (cascade should handle lessons, but we already deleted them)
+      if (deletedSectionIds.length > 0) {
+        await createClient()
+          .from("sections")
+          .delete()
+          .in("id", deletedSectionIds);
+        setDeletedSectionIds([]);
+      }
+
+      // Track updated sections to sync local state with real IDs
+      const updatedSections = [...sections];
+
+      for (let si = 0; si < updatedSections.length; si++) {
+        const section = updatedSections[si];
         let sectionId = section.id;
 
         if (section.id.startsWith("new-")) {
@@ -471,6 +496,8 @@ export default function CourseForm({ courseId }: CourseFormProps) {
 
           if (error || !data) continue;
           sectionId = data.id;
+          // Update local state with real ID
+          updatedSections[si] = { ...section, id: sectionId };
         } else {
           await createClient()
             .from("sections")
@@ -479,8 +506,9 @@ export default function CourseForm({ courseId }: CourseFormProps) {
         }
 
         // Save lessons
-        for (let li = 0; li < section.lessons.length; li++) {
-          const lesson = section.lessons[li];
+        const updatedLessons = [...section.lessons];
+        for (let li = 0; li < updatedLessons.length; li++) {
+          const lesson = updatedLessons[li];
 
           const lessonData = {
             section_id: sectionId,
@@ -497,7 +525,15 @@ export default function CourseForm({ courseId }: CourseFormProps) {
           };
 
           if (lesson.id.startsWith("new-")) {
-            await createClient().from("lessons").insert(lessonData);
+            const { data } = await createClient()
+              .from("lessons")
+              .insert(lessonData)
+              .select("id")
+              .single();
+            if (data) {
+              // Update local state with real ID
+              updatedLessons[li] = { ...lesson, id: data.id };
+            }
           } else {
             await createClient()
               .from("lessons")
@@ -505,7 +541,11 @@ export default function CourseForm({ courseId }: CourseFormProps) {
               .eq("id", lesson.id);
           }
         }
+        updatedSections[si] = { ...updatedSections[si], lessons: updatedLessons };
       }
+
+      // Sync local state with real IDs to prevent re-insertion on next save
+      setSections(updatedSections);
 
       // Save exam questions
       if (examEnabled) {
@@ -594,7 +634,21 @@ export default function CourseForm({ courseId }: CourseFormProps) {
 
   function removeSection(index: number) {
     markDirty();
-    setSections((prev) => prev.filter((_, i) => i !== index));
+    setSections((prev) => {
+      const section = prev[index];
+      // Track real (non-new) IDs for DB deletion
+      if (section && !section.id.startsWith("new-")) {
+        setDeletedSectionIds((ids) => [...ids, section.id]);
+        // Also track all real lesson IDs within the section
+        const realLessonIds = section.lessons
+          .filter((l) => !l.id.startsWith("new-"))
+          .map((l) => l.id);
+        if (realLessonIds.length > 0) {
+          setDeletedLessonIds((ids) => [...ids, ...realLessonIds]);
+        }
+      }
+      return prev.filter((_, i) => i !== index);
+    });
     setDeleteConfirmId(null);
   }
 
@@ -621,6 +675,11 @@ export default function CourseForm({ courseId }: CourseFormProps) {
     setSections((prev) => {
       const next = [...prev];
       const section = { ...next[sectionIdx] };
+      const lesson = section.lessons[lessonIdx];
+      // Track real (non-new) lesson ID for DB deletion
+      if (lesson && !lesson.id.startsWith("new-")) {
+        setDeletedLessonIds((ids) => [...ids, lesson.id]);
+      }
       section.lessons = section.lessons.filter((_, i) => i !== lessonIdx);
       next[sectionIdx] = section;
       return next;
