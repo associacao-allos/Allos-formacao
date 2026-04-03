@@ -8,6 +8,7 @@ import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
 import Textarea from "@/components/ui/Textarea";
 import Select from "@/components/ui/Select";
+import ImageUpload from "@/components/ui/ImageUpload";
 import Badge from "@/components/ui/Badge";
 import { useCategories } from "@/hooks/useCategories";
 import { slugify } from "@/lib/utils/format";
@@ -901,16 +902,20 @@ export default function CourseForm({ courseId }: CourseFormProps) {
             value={category}
             onChange={(v) => { setCategory(v); markDirty(); }}
           />
-          <Input
-            label="URL da thumbnail (capa do curso)"
+          <ImageUpload
+            label="Thumbnail do curso (capa vertical 720x1040)"
             value={thumbnailUrl}
-            onChange={(e) => { setThumbnailUrl(e.target.value); markDirty(); }}
-            placeholder="https://..."
+            onChange={(url) => { setThumbnailUrl(url); markDirty(); }}
+            folder="thumbnails"
+            aspectHint="9/13"
+            placeholder="https://... ou faça upload"
           />
-          <Input
+          <ImageUpload
             label="Thumbnail padrão das aulas (opcional)"
             value={defaultLessonThumbnail}
-            onChange={(e) => { setDefaultLessonThumbnail(e.target.value); markDirty(); }}
+            onChange={(url) => { setDefaultLessonThumbnail(url); markDirty(); }}
+            folder="lesson-thumbnails"
+            aspectHint="16/9"
             placeholder="https://... (usada em aulas sem thumbnail própria)"
           />
 

@@ -24,7 +24,7 @@ export default function CourseCard({ course, isInstructor }: CourseCardProps) {
       href={`/formacao/curso/${course.slug}`}
       className="group block"
     >
-      <article className="relative aspect-[3/4] rounded-2xl overflow-hidden cursor-pointer">
+      <article className="relative aspect-[9/13] rounded-2xl overflow-hidden cursor-pointer">
         {/* Background image */}
         {course.thumbnail_url ? (
           <Image
