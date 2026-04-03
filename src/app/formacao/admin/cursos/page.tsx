@@ -24,6 +24,7 @@ import {
   Eye,
   EyeOff,
   Sparkles,
+  Trash2,
 } from "lucide-react";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
@@ -60,6 +61,7 @@ export default function AdminCursosPage() {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [sortBy, setSortBy] = useState<SortOption>("created_at");
   const [archiveTarget, setArchiveTarget] = useState<Course | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<Course | null>(null);
   const [duplicating, setDuplicating] = useState<string | null>(null);
   const [togglingStatus, setTogglingStatus] = useState<string | null>(null);
   const [sortOpen, setSortOpen] = useState(false);
@@ -190,6 +192,28 @@ export default function AdminCursosPage() {
     );
     setArchiveTarget(null);
     toast.success("Curso arquivado.");
+  }
+
+  async function deleteCourse() {
+    if (!deleteTarget) return;
+    const supabase = createClient();
+    // Delete dependent data first (enrollments don't cascade)
+    await supabase.from("enrollments").delete().eq("course_id", deleteTarget.id);
+    await supabase.from("exam_questions").delete().eq("course_id", deleteTarget.id);
+
+    const { error } = await supabase
+      .from("courses")
+      .delete()
+      .eq("id", deleteTarget.id);
+
+    if (error) {
+      toast.error("Erro ao apagar curso: " + error.message);
+      return;
+    }
+
+    setCourses((prev) => prev.filter((c) => c.id !== deleteTarget.id));
+    setDeleteTarget(null);
+    toast.success("Curso apagado permanentemente.");
   }
 
   async function restoreCourse(id: string) {
@@ -847,10 +871,21 @@ export default function AdminCursosPage() {
                             onClick={() => setArchiveTarget(course)}
                             className="p-2 text-cream/30 hover:text-red-400 transition-colors rounded-lg hover:bg-white/[.03]"
                             aria-label={`Arquivar ${course.title}`}
+                            title="Arquivar"
                           >
                             <Archive className="h-4 w-4" />
                           </button>
                         )}
+
+                        {/* Delete button */}
+                        <button
+                          onClick={() => setDeleteTarget(course)}
+                          className="p-2 text-cream/30 hover:text-red-500 transition-colors rounded-lg hover:bg-white/[.03]"
+                          aria-label={`Apagar ${course.title}`}
+                          title="Apagar permanentemente"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
                       </div>
                     </td>
                   </motion.tr>
@@ -883,6 +918,26 @@ export default function AdminCursosPage() {
             <div className="flex justify-end gap-3">
               <Button variant="ghost" onClick={() => setArchiveTarget(null)}>Cancelar</Button>
               <Button variant="danger" onClick={archiveCourse}>Arquivar</Button>
+            </div>
+          </div>
+        )}
+      </Modal>
+
+      {/* Delete confirmation modal */}
+      <Modal
+        open={!!deleteTarget}
+        onClose={() => setDeleteTarget(null)}
+        title="Apagar curso"
+      >
+        {deleteTarget && (
+          <div className="space-y-4">
+            <p className="text-sm text-cream/50">
+              Tem certeza que deseja apagar permanentemente <span className="font-medium text-red-400">{deleteTarget.title}</span>?
+              Todos os módulos, aulas, matrículas e dados relacionados serão perdidos. Esta ação não pode ser desfeita.
+            </p>
+            <div className="flex justify-end gap-3">
+              <Button variant="ghost" onClick={() => setDeleteTarget(null)}>Cancelar</Button>
+              <Button variant="danger" onClick={deleteCourse}>Apagar permanentemente</Button>
             </div>
           </div>
         )}
