@@ -261,37 +261,7 @@ export default function CourseForm({ courseId }: CourseFormProps) {
     if (initialLoadDone) setIsDirty(true);
   }, [initialLoadDone]);
 
-  // --- Autosave effect (only for existing courses) ---
-  // Uses saveCourseRef to always call the latest version of saveCourse,
-  // and re-triggers on sections/questions changes to avoid stale closures
-  useEffect(() => {
-    if (!isEdit || !isDirty || !initialLoadDone) return;
-
-    // Clear any existing timer
-    if (autoSaveTimer.current) {
-      clearTimeout(autoSaveTimer.current);
-    }
-
-    autoSaveTimer.current = setTimeout(() => {
-      saveCourseRef.current?.({ silent: true });
-    }, 30_000);
-
-    return () => {
-      if (autoSaveTimer.current) {
-        clearTimeout(autoSaveTimer.current);
-      }
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isDirty, isEdit, initialLoadDone, sections, questions]);
-
-  // --- Cleanup autosave timer on unmount ---
-  useEffect(() => {
-    return () => {
-      if (autoSaveTimer.current) {
-        clearTimeout(autoSaveTimer.current);
-      }
-    };
-  }, []);
+  // Autosave disabled — manual save only to prevent data corruption
 
   // Load data
   useEffect(() => {
