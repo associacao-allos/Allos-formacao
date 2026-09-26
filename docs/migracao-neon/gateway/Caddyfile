@@ -1,0 +1,46 @@
+# Gateway do Supabase autohospedado (substitui o Kong/Envoy da Supabase).
+# Roteia pela rede privada da Railway. O PostgREST responde o próprio CORS;
+# auth e storage não aceitam o cabeçalho apikey no preflight, então o CORS
+# deles é feito aqui, como o plugin cors do Kong faz na Supabase hospedada.
+{
+	admin off
+	auto_https off
+	servers {
+		trusted_proxies static private_ranges
+	}
+}
+
+(cors) {
+	@preflight method OPTIONS
+	handle @preflight {
+		header Access-Control-Allow-Origin "*"
+		header Access-Control-Allow-Methods "GET, HEAD, PUT, PATCH, POST, DELETE, OPTIONS"
+		header Access-Control-Allow-Headers "{http.request.header.Access-Control-Request-Headers}"
+		header Access-Control-Max-Age "3600"
+		respond 204
+	}
+	header >Access-Control-Allow-Origin "*"
+	header >Access-Control-Expose-Headers "Content-Length, Content-Range, Content-Type, ETag, Location, X-Supabase-Api-Version"
+}
+
+:{$PORT} {
+	handle /health {
+		respond "ok" 200
+	}
+	handle_path /auth/v1/* {
+		import cors
+		reverse_proxy sb-auth.railway.internal:9999
+	}
+	handle_path /rest/v1/* {
+		reverse_proxy sb-rest.railway.internal:3000
+	}
+	handle_path /storage/v1/* {
+		import cors
+		reverse_proxy sb-storage.railway.internal:5000 {
+			header_up X-Forwarded-Prefix /storage/v1
+		}
+	}
+	handle {
+		respond "not found" 404
+	}
+}

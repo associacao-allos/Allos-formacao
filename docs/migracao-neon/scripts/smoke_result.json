@@ -1,0 +1,92 @@
+[
+ [
+  "PASSOU",
+  "signUp",
+  ""
+ ],
+ [
+  "PASSOU",
+  "signInWithPassword",
+  ""
+ ],
+ [
+  "PASSOU",
+  "hook: claim user_role no JWT",
+  "user_role=\"student\" cargos=[] aud=authenticated role=authenticated"
+ ],
+ [
+  "PASSOU",
+  "getUser com o token",
+  ""
+ ],
+ [
+  "PASSOU",
+  "RLS: usuário lê o próprio profile (trigger on_auth_user_created)",
+  "[{\"id\":\"ddcc87be-0597-41e5-9bab-88323d0ead8d\",\"role\":\"student\"}]"
+ ],
+ [
+  "PASSOU",
+  "RLS: usuário comum não vê profiles alheios",
+  "1 linhas"
+ ],
+ [
+  "PASSOU",
+  "RLS: anon não lê profiles",
+  "0 linhas"
+ ],
+ [
+  "PASSOU",
+  "service role lê tudo (bypass RLS)",
+  "count=1"
+ ],
+ [
+  "PASSOU",
+  "auth.admin.listUsers",
+  "1 usuários"
+ ],
+ [
+  "PASSOU",
+  "generateLink aponta para /auth/v1/verify",
+  "https://sb-gateway-production-1dca.up.railway.app/auth/v1/verify?token=…&type=recovery&redirect_to=https://allos.org.br/formacao/redefinir-senha"
+ ],
+ [
+  "PASSOU",
+  "refreshSession",
+  ""
+ ],
+ [
+  "PASSOU",
+  "storage upload",
+  ""
+ ],
+ [
+  "PASSOU",
+  "storage URL pública devolve o arquivo",
+  "200 /storage/v1/object/public/ensaio-teste/teste/ola.txt"
+ ],
+ [
+  "PASSOU",
+  "storage limpeza",
+  ""
+ ],
+ [
+  "PASSOU",
+  "CORS preflight /rest/v1/profiles",
+  "200 ACAO=*"
+ ],
+ [
+  "PASSOU",
+  "CORS preflight /auth/v1/token",
+  "204 ACAO=*"
+ ],
+ [
+  "PASSOU",
+  "CORS preflight /storage/v1/object/public/x/y",
+  "204 ACAO=*"
+ ],
+ [
+  "PASSOU",
+  "limpeza: usuário apagado",
+  ""
+ ]
+]

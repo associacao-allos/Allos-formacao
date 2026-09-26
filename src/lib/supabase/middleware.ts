@@ -2,10 +2,12 @@
 // 1. Refrescar sessão Supabase (set/update de cookies)
 // 2. Bloquear rotas protegidas (/formacao/admin, /formacao/curso) sem login
 //    redirecionando pra /formacao/auth?redirect=...
-// 3. Em catch geral, limpa cookies sb-* e redireciona pra auth — evita loop
+// 3. Em catch geral, limpa cookies sb-* e redireciona pra auth, evita loop
 //    quando token está corrompido.
 
 import { createServerClient } from "@supabase/ssr";
+import { AUTH_COOKIE_NAME } from "@/lib/supabase/cookie";
+import { claimsVerificadas } from "@/lib/supabase/jwt";
 import { NextResponse, type NextRequest } from "next/server";
 import { cargosDe } from "@/lib/cargos";
 import { areaProibida, caminhosDoPainel, circulaLivre, homeDaPessoa, homeDoPainel } from "@/lib/areas";
@@ -40,7 +42,6 @@ function clearAuthRedirect(request: NextRequest, redirectPath: string) {
 // from Singapore region) per request to these endpoints.
 const PUBLIC_PATH_PREFIXES = [
   "/formacao/api/home-data",
-  "/formacao/api/ranking",
   "/formacao/auth/callback",
   "/formacao/auth/set-session",
   "/formacao/auth/sync-cookies",
@@ -53,7 +54,7 @@ export async function updateSession(request: NextRequest) {
   const isPublic = PUBLIC_PATH_PREFIXES.some((p) => pathname.startsWith(p));
 
   if (isPublic) {
-    // Pass through — let the route handler set its own Cache-Control
+    // Pass through, let the route handler set its own Cache-Control
     // so CDN caching (s-maxage on home-data and ranking) actually works.
     return NextResponse.next({ request });
   }
@@ -65,6 +66,7 @@ export async function updateSession(request: NextRequest) {
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
       {
+        cookieOptions: { name: AUTH_COOKIE_NAME },
         cookies: {
           getAll() {
             return request.cookies.getAll();
@@ -82,13 +84,25 @@ export async function updateSession(request: NextRequest) {
       }
     );
 
-    // getClaims() verifica o JWT local via JWKS cacheado (Supabase usa ES256
-    // assimetrico) — elimina round-trip pra /auth/v1/user em quase toda chamada.
-    // Fallback pra getUser() quando claims falhar (HMAC, JWKS indisponivel etc).
+    // A sessão é conferida localmente, sem round-trip pra /auth/v1/user em quase
+    // toda chamada. Com SUPABASE_JWT_SECRET (GoTrue próprio, HS256) a conferência
+    // é nossa, em @/lib/supabase/jwt; sem ele, getClaims() faz o mesmo quando o
+    // token é assimétrico (era o caso na Supabase) e cai pra getUser() quando não.
+    // getSession() lê o cookie e, se o token venceu, renova antes de devolver.
     let user: { id: string; role?: string | null; cargos?: string[] } | null = null;
     try {
-      const claimsResult = await supabase.auth.getClaims();
-      const claims = claimsResult.data?.claims;
+      const segredoJwt = process.env.SUPABASE_JWT_SECRET;
+      let claims: Record<string, unknown> | null | undefined;
+      let claimsInvalidas = false;
+      if (segredoJwt) {
+        const { data: { session } } = await supabase.auth.getSession();
+        claims = session ? await claimsVerificadas(session.access_token, segredoJwt) : null;
+        claimsInvalidas = !!session && !claims;
+      } else {
+        const claimsResult = await supabase.auth.getClaims();
+        claims = claimsResult.data?.claims;
+        claimsInvalidas = !!claimsResult.error;
+      }
       if (claims?.sub) {
         user = {
           id: claims.sub as string,
@@ -99,8 +113,8 @@ export async function updateSession(request: NextRequest) {
           cargos:
             ((claims as Record<string, unknown>).user_cargos as string[] | undefined) ?? [],
         };
-      } else if (claimsResult.error) {
-        // claims invalido/expirado — tenta refresh via getUser
+      } else if (claimsInvalidas) {
+        // claims invalido/expirado, tenta refresh via getUser
         const result = await supabase.auth.getUser();
         user = result.data.user ? { id: result.data.user.id } : null;
       }
@@ -141,9 +155,9 @@ export async function updateSession(request: NextRequest) {
       }
     }
 
-    // Admin routes — check role (admin or instructor required).
-    // Prefere claim `user_role` no JWT (custom claim da Auth Hook em
-    // supabase/functions/access-token-hook): zero round-trip. Cai pra query
+    // Admin routes, check role (admin or instructor required).
+    // Prefere claim `user_role` no JWT (custom_access_token_hook, função SQL
+    // em supabase/migrations/078_cargos_acumulaveis.sql): zero round-trip. Cai pra query
     // em profiles so quando o claim nao existe (hook ainda nao habilitada).
     if (pathname.startsWith("/formacao/admin") && user) {
       let role: string | null = user.role ?? null;
@@ -162,13 +176,13 @@ export async function updateSession(request: NextRequest) {
       // Basta UM cargo servir, e a lista de quem-pode não mora aqui: vem do
       // catálogo em @/lib/areas, o mesmo de onde o menu do site e a navegação
       // do painel tiram a resposta. Enquanto essa lista estava escrita à mão
-      // em cada um dos três lugares, eles envelheciam separados — e a falha
+      // em cada um dos três lugares, eles envelheciam separados, e a falha
       // aparecia como área que existe, funciona, e some do menu.
       const meus = cargosDe({ role, cargos });
       const suas = caminhosDoPainel(meus);
 
       // Nenhuma área no painel: esta pessoa não tem o que fazer aqui. Vai para
-      // a casa dela, e não para a home — despejar quem conduz um grupo em
+      // a casa dela, e não para a home, despejar quem conduz um grupo em
       // /formacao a obrigaria a descobrir sozinha onde foi parar o trabalho.
       if (!suas.length) {
         return hardRedirect(homeDaPessoa(meus), supabaseResponse);
@@ -198,7 +212,7 @@ export async function updateSession(request: NextRequest) {
 
     // Cache-Control: admin tem dados sensiveis (roles, alunos, financeiro) e
     // nao pode ser cacheado em lugar nenhum. Demais rotas autenticadas (curso,
-    // meus-cursos via subpath /curso/*) podem usar `private` — o navegador do
+    // meus-cursos via subpath /curso/*) podem usar `private`, o navegador do
     // usuario reaproveita o HTML em back/forward navigation, mas nenhum proxy
     // intermediario (Cloudflare/Railway edge) cacheia entre usuarios.
     if (pathname.startsWith("/formacao/admin")) {

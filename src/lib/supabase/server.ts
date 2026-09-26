@@ -6,6 +6,7 @@
 //   NUNCA exponha esse cliente no browser.
 
 import { createServerClient } from "@supabase/ssr";
+import { AUTH_COOKIE_NAME } from "@/lib/supabase/cookie";
 import { cookies } from "next/headers";
 
 export async function createServerSupabaseClient() {
@@ -22,6 +23,7 @@ export async function createServerSupabaseClient() {
         fetch: (input: RequestInfo | URL, init?: RequestInit) =>
           fetch(input, { ...init, cache: "no-store" }),
       },
+      cookieOptions: { name: AUTH_COOKIE_NAME },
       cookies: {
         getAll() {
           return cookieStore.getAll();

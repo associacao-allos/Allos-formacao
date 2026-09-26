@@ -102,7 +102,7 @@ export default function CookiesPage() {
                 "Até você sair da conta ou limpar o navegador",
               ],
               [
-                "sb-syiaushvzhgyhvsmoegt-auth-token",
+                "sb-formacao-auth-token",
                 "Allos",
                 "Identifica sua conta entre visitas",
                 "30 dias",

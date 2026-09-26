@@ -1,12 +1,13 @@
 import { createBrowserClient } from "@supabase/ssr";
+import { AUTH_COOKIE_NAME, ehCookieDeSessaoLegado } from "@/lib/supabase/cookie";
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const SUPABASE_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
 // NOTE: The /formacao/api/sb/[...path] proxy route handler + /formacao/_sb
-// rewrite are still wired up but currently unused — the browser calls the
+// rewrite are still wired up but currently unused, the browser calls the
 // Supabase URL directly. Proxying broke auth for users without DNS bloqueio
-// (reason TBD — curl via proxy worked, but browser SDK failed silently).
+// (reason TBD, curl via proxy worked, but browser SDK failed silently).
 // Re-enable by returning `${window.location.origin}/formacao/api/sb` here
 // after identifying the SDK-vs-proxy mismatch.
 
@@ -20,7 +21,13 @@ const STORAGE_KEY = "sb-auth-cookies";
 function getStoredCookies(): { name: string; value: string }[] {
   if (typeof window === "undefined") return [];
   try {
-    return JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
+    const todos: { name: string; value: string }[] = JSON.parse(
+      localStorage.getItem(STORAGE_KEY) || "[]"
+    );
+    // A sessão da época da Supabase (sb-syiaushvzhgyhvsmoegt-auth-token) fica
+    // aqui até alguém sair da conta. Descartar na leitura faz a próxima escrita
+    // já gravar a lista limpa.
+    return todos.filter((c) => !ehCookieDeSessaoLegado(c.name));
   } catch {
     return [];
   }
@@ -72,6 +79,7 @@ let client: ReturnType<typeof createBrowserClient> | null = null;
 export function createClient() {
   if (client) return client;
   client = createBrowserClient(SUPABASE_URL, SUPABASE_KEY, {
+    cookieOptions: { name: AUTH_COOKIE_NAME },
     cookies: {
       getAll() {
         return getStoredCookies();

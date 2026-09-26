@@ -1,3 +1,14 @@
+// Host do backend (login, API e arquivos). Desde a saída da Supabase ele é um
+// serviço próprio na Railway, e as capas de curso enviadas depois disso moram
+// lá; o next/image recusa host que não esteja em remotePatterns.
+const backendHost = (() => {
+  try {
+    return new URL(process.env.NEXT_PUBLIC_SUPABASE_URL || '').hostname || null;
+  } catch {
+    return null;
+  }
+})();
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   // ⛔ Só em produção. Com o prefixo ligado, `next dev` serve HTML que busca CSS
@@ -40,9 +51,9 @@ const nextConfig = {
         ],
       },
       // Authenticated HTML routes — never cache.
-      // (Public APIs like /formacao/api/home-data and /formacao/api/ranking
-      // need to be cacheable by the CDN, so they're left out of this list
-      // and the middleware skips them too.)
+      // (Public APIs like /formacao/api/home-data need to be cacheable by the
+      // CDN, so they're left out of this list and the middleware skips them
+      // too.)
       {
         source: '/formacao/admin/:path*',
         headers: [
@@ -104,6 +115,9 @@ const nextConfig = {
         protocol: "https",
         hostname: "*.supabase.co",
       },
+      ...(backendHost && !backendHost.endsWith('.supabase.co')
+        ? [{ protocol: "https", hostname: backendHost }]
+        : []),
       {
         protocol: "https",
         hostname: "lh3.googleusercontent.com",

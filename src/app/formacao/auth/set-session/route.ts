@@ -1,4 +1,5 @@
 import { createServerClient } from "@supabase/ssr";
+import { AUTH_COOKIE_NAME } from "@/lib/supabase/cookie";
 import { cookies } from "next/headers";
 import { type NextRequest, NextResponse } from "next/server";
 
@@ -13,7 +14,7 @@ export const runtime = "nodejs";
  * supabase.auth.setSession() which triggers the ssr cookie handler to
  * emit real HttpOnly `Set-Cookie` headers. Without this bridge the
  * browser-side cookie writes get silently blocked in Brave/Safari shields,
- * leaving the server without any session — middleware loops users back
+ * leaving the server without any session, middleware loops users back
  * to /formacao/auth even though localStorage says they are logged in.
  *
  * Client is expected to only navigate after this call succeeds.
@@ -48,6 +49,7 @@ export async function POST(request: NextRequest) {
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
+      cookieOptions: { name: AUTH_COOKIE_NAME },
       cookies: {
         getAll() {
           return cookieStore.getAll();

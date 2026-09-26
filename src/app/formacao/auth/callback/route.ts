@@ -1,4 +1,5 @@
 import { createServerClient } from "@supabase/ssr";
+import { AUTH_COOKIE_NAME } from "@/lib/supabase/cookie";
 import { cookies } from "next/headers";
 import { type NextRequest } from "next/server";
 
@@ -33,6 +34,7 @@ export async function GET(request: NextRequest) {
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
       {
+        cookieOptions: { name: AUTH_COOKIE_NAME },
         cookies: {
           getAll() {
             return cookieStore.getAll();

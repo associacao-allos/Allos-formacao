@@ -1,4 +1,4 @@
-// Auth client-side via decode direto de JWT — bypassa supabase.auth.* porque
+// Auth client-side via decode direto de JWT, bypassa supabase.auth.* porque
 // os métodos do @supabase/ssr travam em alguns navegadores (incidente Brave +
 // shields, ver memory project_oauth_debug). Estratégia atual:
 //
@@ -24,6 +24,7 @@ import {
 } from "react";
 import { createElement } from "react";
 import { createClient, resetClient } from "@/lib/supabase/client";
+import { ehCookieDeSessao } from "@/lib/supabase/cookie";
 import { logger } from "@/lib/logger";
 import { cargosDe, temCargo } from "@/lib/cargos";
 import type { Profile } from "@/types";
@@ -40,14 +41,14 @@ interface AuthContextValue {
    * É o que o catálogo de áreas (`@/lib/areas`) consome para decidir o menu.
    * Os `isX` abaixo continuam existindo porque meia dúzia de telas pergunta
    * por um cargo só, mas quem pergunta "que áreas cabem a esta pessoa?" usa
-   * este conjunto — a resposta passa a ser a mesma do middleware.
+   * este conjunto, a resposta passa a ser a mesma do middleware.
    */
   cargos: Set<string>;
   isAdmin: boolean;
   isInstructor: boolean;
   isStudent: boolean;
   isAssociado: boolean;
-  /** Cargo dedicado a eventos do calendário — vê só essa área. */
+  /** Cargo dedicado a eventos do calendário, vê só essa área. */
   isEventos: boolean;
   /** Conduz um grupo: vê e ajusta só o próprio encontro. */
   isCondutor: boolean;
@@ -78,7 +79,7 @@ function readProfileCache(userId: string): Profile | null {
     if (!raw) return null;
     const parsed: CachedProfile = JSON.parse(raw);
     if (parsed.userId !== userId) return null;
-    // 24h TTL — alem disso, refresh em background sempre roda mesmo com cache.
+    // 24h TTL, alem disso, refresh em background sempre roda mesmo com cache.
     if (Date.now() - parsed.cachedAt > 24 * 60 * 60 * 1000) return null;
     return parsed.profile;
   } catch {
@@ -111,8 +112,11 @@ function clearProfileCache() {
  */
 function decodeJWT(token: string): Record<string, unknown> | null {
   try {
-    const payload = token.split(".")[1];
-    return JSON.parse(atob(payload));
+    // O payload vem em base64url e o JSON em UTF-8: atob direto falhava com
+    // "-"/"_" e embaralhava nome acentuado em user_metadata.
+    const payload = token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/");
+    const bytes = Uint8Array.from(atob(payload), (ch) => ch.charCodeAt(0));
+    return JSON.parse(new TextDecoder().decode(bytes));
   } catch {
     return null;
   }
@@ -158,7 +162,9 @@ function getTokenFromLocalStorage(): string | null {
 
     // Concatena chunks na ordem certa (.0, .1, ... ou nome principal sozinho).
     const authCookies = cookies
-      .filter((c) => c.name.includes("-auth-token") && !c.name.includes("code-verifier"))
+      // Só a sessão deste backend: a da época da Supabase, se ainda estiver no
+      // armazenamento, colaria os pedaços dos dois tokens num JSON inválido.
+      .filter((c) => ehCookieDeSessao(c.name) && !c.name.includes("code-verifier"))
       .sort((a, b) => a.name.localeCompare(b.name));
 
     if (authCookies.length === 0) return null;
@@ -228,7 +234,7 @@ export function AuthProvider({
 
     async function init() {
       try {
-        // Strategy: decode JWT directly — never call supabase.auth.*
+        // Strategy: decode JWT directly, never call supabase.auth.*
         // (those methods hang in Brave due to @supabase/ssr internals)
 
         let authUser: User | null = null;
@@ -258,12 +264,12 @@ export function AuthProvider({
 
           // Stale-while-revalidate: usa cache do localStorage instantaneamente
           // pra desbloquear UI (avatar, role checks). fetchProfile roda em
-          // background pra revalidar — qualquer mudanca de role/nome aparece
+          // background pra revalidar, qualquer mudanca de role/nome aparece
           // na proxima paint.
           const cached = readProfileCache(authUser.id);
           if (cached) {
             setProfile(cached);
-            // Drop loading o quanto antes — UI pode renderizar com cache.
+            // Drop loading o quanto antes, UI pode renderizar com cache.
             setLoading(false);
             // Revalida em background, sem await.
             fetchProfile(authUser.id);
@@ -282,7 +288,7 @@ export function AuthProvider({
 
     init();
 
-    // Detect bfcache restore — reset the Supabase singleton first so the
+    // Detect bfcache restore, reset the Supabase singleton first so the
     // next createClient() rebuilds with fresh in-memory state (otherwise
     // the client can hold stale tokens / listeners from the prior page
     // load).

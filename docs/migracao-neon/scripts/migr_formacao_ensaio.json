@@ -1,0 +1,507 @@
+[
+ {
+  "f": "000_full_schema.sql",
+  "ok": true,
+  "err": ""
+ },
+ {
+  "f": "001_create_categories.sql",
+  "ok": true,
+  "err": ""
+ },
+ {
+  "f": "002_rls_policies.sql",
+  "ok": true,
+  "err": ""
+ },
+ {
+  "f": "003_featured_courses.sql",
+  "ok": true,
+  "err": ""
+ },
+ {
+  "f": "004_course_type.sql",
+  "ok": true,
+  "err": ""
+ },
+ {
+  "f": "005_lesson_thumbnails.sql",
+  "ok": true,
+  "err": ""
+ },
+ {
+  "f": "010_add_associado_role.sql",
+  "ok": true,
+  "err": ""
+ },
+ {
+  "f": "011_formacao_admin_tables.sql",
+  "ok": true,
+  "err": ""
+ },
+ {
+  "f": "012_extra_sections.sql",
+  "ok": true,
+  "err": ""
+ },
+ {
+  "f": "013_structured_courses.sql",
+  "ok": true,
+  "err": ""
+ },
+ {
+  "f": "014_formacao_statistics.sql",
+  "ok": true,
+  "err": ""
+ },
+ {
+  "f": "015_show_instructor.sql",
+  "ok": true,
+  "err": ""
+ },
+ {
+  "f": "016_lesson_notes.sql",
+  "ok": true,
+  "err": ""
+ },
+ {
+  "f": "017_meet_presencas.sql",
+  "ok": true,
+  "err": ""
+ },
+ {
+  "f": "018_fix_courses_update_policy.sql",
+  "ok": true,
+  "err": ""
+ },
+ {
+  "f": "019_meet_presencas_atividade.sql",
+  "ok": true,
+  "err": ""
+ },
+ {
+  "f": "020_eventos_link.sql",
+  "ok": true,
+  "err": ""
+ },
+ {
+  "f": "021_admin_notes.sql",
+  "ok": true,
+  "err": ""
+ },
+ {
+  "f": "022_certificate_name.sql",
+  "ok": true,
+  "err": ""
+ },
+ {
+  "f": "023_fix_certificado_submissions_rls.sql",
+  "ok": true,
+  "err": ""
+ },
+ {
+  "f": "024_missing_indices.sql",
+  "ok": true,
+  "err": ""
+ },
+ {
+  "f": "025_fk_cascade.sql",
+  "ok": true,
+  "err": ""
+ },
+ {
+  "f": "026_rls_security_gaps.sql",
+  "ok": true,
+  "err": ""
+ },
+ {
+  "f": "027_is_admin_function.sql",
+  "ok": true,
+  "err": ""
+ },
+ {
+  "f": "028_lesson_comments_co_instructor.sql",
+  "ok": true,
+  "err": ""
+ },
+ {
+  "f": "029_sync_courses_meetings.sql",
+  "ok": true,
+  "err": ""
+ },
+ {
+  "f": "030_disable_show_instructor.sql",
+  "ok": true,
+  "err": ""
+ },
+ {
+  "f": "031_whatsapp_templates.sql",
+  "ok": true,
+  "err": ""
+ },
+ {
+  "f": "032_course_study_link.sql",
+  "ok": true,
+  "err": ""
+ },
+ {
+  "f": "033_study_links_standalone.sql",
+  "ok": true,
+  "err": ""
+ },
+ {
+  "f": "034_jwt_user_role_claim.sql",
+  "ok": true,
+  "err": ""
+ },
+ {
+  "f": "035_eventos_permanente.sql",
+  "ok": true,
+  "err": ""
+ },
+ {
+  "f": "036_lesson_favorites.sql",
+  "ok": true,
+  "err": ""
+ },
+ {
+  "f": "037_aprimoramento_estados.sql",
+  "ok": true,
+  "err": ""
+ },
+ {
+  "f": "038_aprimoramento_exercicios_sugestoes.sql",
+  "ok": true,
+  "err": ""
+ },
+ {
+  "f": "038_seed.sql",
+  "ok": true,
+  "err": ""
+ },
+ {
+  "f": "039_arquivamento.sql",
+  "ok": true,
+  "err": ""
+ },
+ {
+  "f": "040_notas_dia.sql",
+  "ok": true,
+  "err": ""
+ },
+ {
+  "f": "041_role_eventos.sql",
+  "ok": true,
+  "err": ""
+ },
+ {
+  "f": "042_usage_sessions.sql",
+  "ok": true,
+  "err": ""
+ },
+ {
+  "f": "043_certificate_reviews.sql",
+  "ok": true,
+  "err": ""
+ },
+ {
+  "f": "044_aceite_termos.sql",
+  "ok": true,
+  "err": ""
+ },
+ {
+  "f": "045_bloqueio_acesso.sql",
+  "ok": true,
+  "err": ""
+ },
+ {
+  "f": "046_email_envios.sql",
+  "ok": true,
+  "err": ""
+ },
+ {
+  "f": "047_sinais_resolvidos.sql",
+  "ok": true,
+  "err": ""
+ },
+ {
+  "f": "048_ocorrencias.sql",
+  "ok": true,
+  "err": ""
+ },
+ {
+  "f": "049_sinais_estado.sql",
+  "ok": true,
+  "err": ""
+ },
+ {
+  "f": "050_certificado_anulacao.sql",
+  "ok": true,
+  "err": ""
+ },
+ {
+  "f": "051_fechar_leitura_publica.sql",
+  "ok": true,
+  "err": ""
+ },
+ {
+  "f": "051_meet_api.sql",
+  "ok": true,
+  "err": ""
+ },
+ {
+  "f": "052_meet_salas_avulsas.sql",
+  "ok": true,
+  "err": ""
+ },
+ {
+  "f": "053_meet_falas.sql",
+  "ok": true,
+  "err": ""
+ },
+ {
+  "f": "054_status_automatico.sql",
+  "ok": true,
+  "err": ""
+ },
+ {
+  "f": "055_meet_encontros_descartados.sql",
+  "ok": true,
+  "err": ""
+ },
+ {
+  "f": "056_limite_encerramento.sql",
+  "ok": true,
+  "err": ""
+ },
+ {
+  "f": "057_janela_acesso.sql",
+  "ok": true,
+  "err": ""
+ },
+ {
+  "f": "058_duracao_por_sala.sql",
+  "ok": true,
+  "err": ""
+ },
+ {
+  "f": "059_pasta_drive.sql",
+  "ok": true,
+  "err": ""
+ },
+ {
+  "f": "060_gravacao_vira_aula.sql",
+  "ok": true,
+  "err": ""
+ },
+ {
+  "f": "061_youtube.sql",
+  "ok": true,
+  "err": ""
+ },
+ {
+  "f": "062_config_meet_privada.sql",
+  "ok": true,
+  "err": ""
+ },
+ {
+  "f": "063_clipes.sql",
+  "ok": true,
+  "err": ""
+ },
+ {
+  "f": "064_clipes_via_youtube.sql",
+  "ok": true,
+  "err": ""
+ },
+ {
+  "f": "065_clipes_espera.sql",
+  "ok": true,
+  "err": ""
+ },
+ {
+  "f": "066_publicar_curso.sql",
+  "ok": true,
+  "err": ""
+ },
+ {
+  "f": "067_atalhos_meet.sql",
+  "ok": true,
+  "err": ""
+ },
+ {
+  "f": "068_clipes_transcricao.sql",
+  "ok": true,
+  "err": ""
+ },
+ {
+  "f": "069_transcricao_srt.sql",
+  "ok": true,
+  "err": ""
+ },
+ {
+  "f": "070_descarte_manual.sql",
+  "ok": true,
+  "err": ""
+ },
+ {
+  "f": "071_aula_ignorada.sql",
+  "ok": true,
+  "err": ""
+ },
+ {
+  "f": "072_clipes_avaliacao.sql",
+  "ok": true,
+  "err": ""
+ },
+ {
+  "f": "073_clipes_curadoria.sql",
+  "ok": true,
+  "err": ""
+ },
+ {
+  "f": "074_condutor_acesso.sql",
+  "ok": true,
+  "err": ""
+ },
+ {
+  "f": "075_encontros_apagados.sql",
+  "ok": true,
+  "err": ""
+ },
+ {
+  "f": "076_aprimoramento_cargos.sql",
+  "ok": true,
+  "err": ""
+ },
+ {
+  "f": "077_condutor_ve_cursos.sql",
+  "ok": true,
+  "err": ""
+ },
+ {
+  "f": "078_cargos_acumulaveis.sql",
+  "ok": true,
+  "err": ""
+ },
+ {
+  "f": "079_areas_por_cargo.sql",
+  "ok": true,
+  "err": ""
+ },
+ {
+  "f": "080_congelar_cargo_do_proprio_perfil.sql",
+  "ok": true,
+  "err": ""
+ },
+ {
+  "f": "081_policies_admin_por_cargo.sql",
+  "ok": true,
+  "err": ""
+ },
+ {
+  "f": "082_avisos_watermarks.sql",
+  "ok": true,
+  "err": ""
+ },
+ {
+  "f": "083_identidade_por_certificado.sql",
+  "ok": true,
+  "err": ""
+ },
+ {
+  "f": "084_condutor_acesso_por_cargo.sql",
+  "ok": true,
+  "err": ""
+ },
+ {
+  "f": "085_recuperar_colunas_perdidas.sql",
+  "ok": true,
+  "err": ""
+ },
+ {
+  "f": "086_certificados_unificados.sql",
+  "ok": true,
+  "err": ""
+ },
+ {
+  "f": "087_alias_por_conta_google.sql",
+  "ok": true,
+  "err": ""
+ },
+ {
+  "f": "088_formato_do_corte.sql",
+  "ok": true,
+  "err": ""
+ },
+ {
+  "f": "089_pessoas_identidade_unificada.sql",
+  "ok": true,
+  "err": ""
+ },
+ {
+  "f": "090_fechar_grade_publica.sql",
+  "ok": true,
+  "err": ""
+ },
+ {
+  "f": "091_processo_seletivo.sql",
+  "ok": true,
+  "err": ""
+ },
+ {
+  "f": "092_pessoas_destaque.sql",
+  "ok": true,
+  "err": ""
+ },
+ {
+  "f": "093_slot_atividade_id.sql",
+  "ok": true,
+  "err": ""
+ },
+ {
+  "f": "094_pessoa_ao_criar_conta.sql",
+  "ok": true,
+  "err": ""
+ },
+ {
+  "f": "095_ciclos_de_cronograma.sql",
+  "ok": true,
+  "err": ""
+ },
+ {
+  "f": "096_salas_fora_da_grade.sql",
+  "ok": true,
+  "err": ""
+ },
+ {
+  "f": "097_ponte_avaliallos.sql",
+  "ok": true,
+  "err": ""
+ },
+ {
+  "f": "098_arquivar_corte_e_padrao_deitado.sql",
+  "ok": true,
+  "err": ""
+ },
+ {
+  "f": "099_remover_avaliacao_clinica.sql",
+  "ok": true,
+  "err": ""
+ },
+ {
+  "f": "100_exclusao_de_conta.sql",
+  "ok": true,
+  "err": ""
+ },
+ {
+  "f": "101_curadoria_por_link.sql",
+  "ok": true,
+  "err": ""
+ },
+ {
+  "f": "102_direitos_autorais_e_drive.sql",
+  "ok": true,
+  "err": ""
+ }
+]
